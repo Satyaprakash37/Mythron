@@ -13,17 +13,25 @@
 - [x] Mark Phase 0 complete
 - [x] Update PROJECT_STATUS.md
 
-## Phase 1 (Current)
+## Phase 1 (COMPLETE)
 
-- [ ] Choose LLM API provider
-- [ ] Implement reasoning core wrapper
-- [ ] Basic prompt to response flow
-- [ ] Tests for reasoning core
-- [ ] Move to Phase 2
+- [x] Choose LLM API provider — Google Gemini
+- [x] Implement reasoning core wrapper — src/mythron/reasoning.py
+- [x] Basic prompt to response flow — verified (HELLO FROM MYTHRON)
+- [x] Tests for reasoning core — 5/5 PASS
+- [x] Move to Phase 2
+
+## Phase 2 (Current)
+
+- [ ] Design Plan/Act/Observe/Analyze/Verify/Decide/Stop loop
+- [ ] Implement AgentOrchestrator class
+- [ ] State machine (TASK_RECEIVED, RECON, DISCOVERY, ANALYSIS, FINDINGS, etc.)
+- [ ] Integrate with ReasoningCore
+- [ ] Tests for orchestrator
+- [ ] Move to Phase 3
 
 ## Backlog (Future Phases)
 
-- Phase 2: Agent orchestrator (Plan, Act, Observe, Analyze, Verify, Decide, Stop)
 - Phase 3: Memory / state persistence
 - Phase 4: Browser agent
 - Phase 5: Dynamic capability engine + sandbox
