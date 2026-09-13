@@ -2,16 +2,21 @@
 
 All notable changes to MYTHRON will be documented in this file.
 
-## [Phase 0] — 2026-09-13
+## [Phase 0 Complete] — 2026-09-13
 
-### Added
+### Completed
 
-- Project directory structure at ~/mythron/ (docs, logs, scripts, src, tests)
+- Project directory structure at ~/mythron/ with subdirectories: docs, logs, scripts, src, tests
 - Documentation baseline: README.md, PROJECT_STATUS.md, ARCHITECTURE.md, DEVELOPMENT_HANDOFF.md, CHANGELOG.md, TODO.md
+- Python package mythron (v0.0.1) with health_check() entry point at src/mythron/main.py
+- Smoke tests at tests/test_basic.py — 2/2 PASS
+- Git repository initialized on branch main
+- First commit: 2b9cdfa "Phase 0: project bootstrap"
 
 ### Decisions
 
 - Phase 1 AI core will use API-based reasoning (no local CUDA/ROCm available)
+- Branch name set to main (modern convention, renamed from default master)
 
 ### Environment
 

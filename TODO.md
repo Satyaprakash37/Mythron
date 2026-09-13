@@ -1,6 +1,6 @@
 # MYTHRON — TODO
 
-## Phase 0 (Current)
+## Phase 0 (COMPLETE)
 
 - [x] Environment inspection
 - [x] Dev tool verification (Python, pip, Git)
@@ -8,12 +8,12 @@
 - [x] Architecture decision (API-based AI core)
 - [x] Project directory structure
 - [x] Initial documentation files
-- [ ] Minimal health-check application
-- [ ] Verify project runs
-- [ ] Mark Phase 0 complete
-- [ ] Update PROJECT_STATUS.md
+- [x] Minimal health-check application
+- [x] Verify project runs
+- [x] Mark Phase 0 complete
+- [x] Update PROJECT_STATUS.md
 
-## Phase 1 (Next)
+## Phase 1 (Current)
 
 - [ ] Choose LLM API provider
 - [ ] Implement reasoning core wrapper
