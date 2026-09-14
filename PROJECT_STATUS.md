@@ -4,11 +4,11 @@
 
 ## CURRENT PHASE
 
-Phase 1 — AI Core COMPLETE
+Phase 2 — Agent Orchestrator (IN PROGRESS)
 
 ## CURRENT STATUS
 
-Phase 1 complete. Ready to begin Phase 2 (Agent Orchestrator).
+Phase 2 in progress. Building adaptive multi-path reasoning orchestrator.
 
 ## COMPLETED WORK
 
@@ -76,3 +76,37 @@ Phase 2 — Agent Orchestrator:
 5. LLM provider: Google Gemini. Model: gemini-3.6-flash (gemini-2.5-flash deprecated for new users as of 2026-09-13).
 6. Python venv at .venv/ isolates dependencies. google-genai SDK v2.23.0 installed.
 7. API key stored in .env with 600 permissions, gitignored. Never hardcoded in source.
+
+## Phase 2 Progress (In Progress)
+
+### Status
+Phase 2 in progress. Building adaptive multi-path reasoning orchestrator with modular architecture. Mock actions only (no real target interaction yet).
+
+### Adaptive Multi-Path Reasoning (NEW ARCHITECTURE REQUIREMENT)
+Added to ARCHITECTURE.md. The orchestrator must:
+- Try multiple approaches per objective
+- Analyze failures and adapt
+- Avoid repeating failed approaches
+- Stop only when: objective verified complete, no useful approaches remain, or task stop condition reached
+
+### Modular File Plan
+- src/mythron/states.py — state machine definition
+- src/mythron/approaches.py — Approach, Attempt, AttemptHistory dataclasses
+- src/mythron/executors.py — ApproachExecutor protocol + MockApproachExecutor
+- src/mythron/orchestrator.py — AgentOrchestrator class with adaptive loop
+- tests/test_orchestrator.py — tests for all of the above
+
+### Progress Checklist
+- [x] Adaptive Multi-Path Reasoning documented in ARCHITECTURE.md
+- [x] Modular file plan defined
+- [ ] states.py
+- [ ] approaches.py
+- [ ] executors.py
+- [ ] orchestrator.py
+- [ ] tests/test_orchestrator.py
+- [ ] CLI demo
+- [ ] Update docs + commit
+
+### New Architecture Decisions
+8. Phase 2 orchestrator supports adaptive multi-path reasoning (failure triggers re-analysis, alternative approaches, no blind retry).
+9. Phase 2 uses modular architecture: states.py, approaches.py, executors.py, orchestrator.py. Mock executor for now; real cybersecurity executors plug in via same interface in Phase 6+.
