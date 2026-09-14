@@ -22,5 +22,3 @@ logs/
 Thumbs.db
 
 # MYTHRON runtime state
-logs/
-.env
