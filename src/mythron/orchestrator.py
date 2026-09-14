@@ -33,6 +33,7 @@ from mythron.executors import (
     MockApproachExecutor,
 )
 from mythron.reasoning import ReasoningCore
+from mythron.memory import TaskMemory
 from mythron.states import StateMachine, TaskState
 
 
@@ -50,12 +51,14 @@ class AgentOrchestrator:
         reasoning_core: Optional[ReasoningCore] = None,
         executor: Optional[ApproachExecutor] = None,
         max_attempts: int = 10,
+        memory: Optional[TaskMemory] = None,
     ) -> None:
         self._reasoning = reasoning_core
         self._executor = executor if executor is not None else MockApproachExecutor()
         self._max_attempts = max_attempts
         self._state = StateMachine()
         self._history = AttemptHistory()
+        self._memory = memory
         self._objective = ""
         self._scope = ""
 
@@ -79,6 +82,7 @@ class AgentOrchestrator:
         self._objective = objective
         self._scope = scope
         self._state.transition_to(TaskState.TARGET_SCOPE_DEFINED)
+        self._save_memory()
 
         if approaches is None:
             approaches = self._generate_approaches()
@@ -94,6 +98,7 @@ class AgentOrchestrator:
 
             attempt = self._execute_approach(next_approach)
             attempts += 1
+            self._save_memory()
 
             if attempt.status == AttemptStatus.SUCCEEDED:
                 if self._verify_objective():
@@ -103,12 +108,42 @@ class AgentOrchestrator:
                     self._state.transition_to(TaskState.FINDINGS)
                     self._state.transition_to(TaskState.REPORTING)
                     self._state.transition_to(TaskState.COMPLETED)
+                    self._save_memory()
                     return "COMPLETED"
             elif attempt.status == AttemptStatus.FAILED:
                 self._analyze_failure(attempt)
 
         self._state.transition_to(TaskState.STOPPED)
+        self._save_memory()
         return "STOPPED"
+
+    def _save_memory(self) -> None:
+        """Persist the current task state and attempt history."""
+        if self._memory is None:
+            return
+
+        attempts = []
+        for attempt in self._history.all_attempts():
+            approach = self._history.get_approach(attempt.approach_id)
+            attempts.append(
+                {
+                    "id": attempt.id,
+                    "approach": approach.name if approach else "unknown",
+                    "status": attempt.status.value,
+                    "result": attempt.result,
+                    "failure_reason": attempt.failure_reason,
+                    "observations": list(attempt.observations),
+                }
+            )
+
+        data = {
+            "objective": self._objective,
+            "scope": self._scope,
+            "state": self.state.value,
+            "attempts": attempts,
+        }
+
+        self._memory.save(data)
 
     def _generate_approaches(self) -> List[Approach]:
         """Generate approaches. LLM if available, else defaults."""
