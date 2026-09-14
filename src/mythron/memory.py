@@ -37,6 +37,18 @@ class TaskMemory:
             self.path.read_text(encoding="utf-8")
         )
 
+    def load_or_empty(self) -> Dict[str, Any]:
+        """Load persisted memory, returning an empty task structure if absent."""
+        data = self.load()
+        if data is None:
+            return {
+                "objective": "",
+                "scope": "",
+                "state": None,
+                "attempts": [],
+            }
+        return data
+
     def exists(self) -> bool:
         """Return True if persistent memory exists."""
         return self.path.exists()

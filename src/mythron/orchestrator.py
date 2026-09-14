@@ -77,17 +77,26 @@ class AgentOrchestrator:
         objective: str,
         scope: str = "authorized testing only",
         approaches: Optional[List[Approach]] = None,
+        resume: bool = False,
     ) -> str:
-        """Run the adaptive loop. Returns 'COMPLETED' or 'STOPPED'."""
+        """Run the adaptive loop. Returns 'COMPLETED' or 'STOPPED'.
+
+        If resume=True, restore the previously persisted task before
+        continuing the adaptive loop.
+        """
         self._objective = objective
         self._scope = scope
-        self._state.transition_to(TaskState.TARGET_SCOPE_DEFINED)
-        self._save_memory()
 
         if approaches is None:
             approaches = self._generate_approaches()
         for a in approaches:
             self._history.add_approach(a)
+
+        if resume:
+            self._restore_memory()
+        else:
+            self._state.transition_to(TaskState.TARGET_SCOPE_DEFINED)
+            self._save_memory()
 
         attempts = 0
         while attempts < self._max_attempts:
@@ -102,12 +111,7 @@ class AgentOrchestrator:
 
             if attempt.status == AttemptStatus.SUCCEEDED:
                 if self._verify_objective():
-                    self._state.transition_to(TaskState.RECON)
-                    self._state.transition_to(TaskState.DISCOVERY)
-                    self._state.transition_to(TaskState.ANALYSIS)
-                    self._state.transition_to(TaskState.FINDINGS)
-                    self._state.transition_to(TaskState.REPORTING)
-                    self._state.transition_to(TaskState.COMPLETED)
+                    self._complete_lifecycle()
                     self._save_memory()
                     return "COMPLETED"
             elif attempt.status == AttemptStatus.FAILED:
@@ -116,6 +120,111 @@ class AgentOrchestrator:
         self._state.transition_to(TaskState.STOPPED)
         self._save_memory()
         return "STOPPED"
+
+    def _complete_lifecycle(self) -> None:
+        """Advance the task through valid lifecycle states to COMPLETED."""
+        transitions = {
+            TaskState.TASK_RECEIVED: TaskState.TARGET_SCOPE_DEFINED,
+            TaskState.TARGET_SCOPE_DEFINED: TaskState.RECON,
+            TaskState.RECON: TaskState.DISCOVERY,
+            TaskState.DISCOVERY: TaskState.ANALYSIS,
+            TaskState.ENUMERATION: TaskState.ANALYSIS,
+            TaskState.ANALYSIS: TaskState.FINDINGS,
+            TaskState.FINDINGS: TaskState.REPORTING,
+            TaskState.REPORTING: TaskState.COMPLETED,
+        }
+
+        while self._state.current() != TaskState.COMPLETED:
+            current = self._state.current()
+
+            if current in (TaskState.STOPPED, TaskState.COMPLETED):
+                return
+
+            next_state = transitions.get(current)
+            if next_state is None:
+                return
+
+            self._state.transition_to(next_state)
+
+    def _restore_memory(self) -> None:
+        """Restore persisted task metadata and completed attempts."""
+        if self._memory is None:
+            return
+
+        data = self._memory.load()
+        if not data:
+            return
+
+        self._objective = data.get("objective", "")
+        self._scope = data.get("scope", "")
+
+        self._restore_state(data.get("state", ""))
+
+        for saved_attempt in data.get("attempts", []):
+            approach_name = saved_attempt.get("approach")
+            if not approach_name:
+                continue
+
+            approach = next(
+                (
+                    a
+                    for a in self._history.all_approaches()
+                    if a.name == approach_name
+                ),
+                None,
+            )
+
+            if approach is None:
+                continue
+
+            attempt = self._history.start_attempt(approach.id)
+
+            try:
+                status = AttemptStatus(saved_attempt.get("status", "FAILED"))
+            except ValueError:
+                status = AttemptStatus.FAILED
+
+            self._history.complete_attempt(
+                attempt_id=attempt.id,
+                status=status,
+                result=saved_attempt.get("result", ""),
+                failure_reason=saved_attempt.get("failure_reason"),
+                observations=saved_attempt.get("observations", []),
+            )
+
+    def _restore_state(self, saved_state: str) -> None:
+        """Restore the persisted lifecycle state using valid transitions."""
+        try:
+            target = TaskState(saved_state)
+        except ValueError:
+            return
+
+        if target in (TaskState.TASK_RECEIVED, TaskState.STOPPED):
+            return
+
+        state_path = [
+            TaskState.TARGET_SCOPE_DEFINED,
+            TaskState.RECON,
+            TaskState.DISCOVERY,
+            TaskState.ENUMERATION,
+            TaskState.ANALYSIS,
+            TaskState.FINDINGS,
+            TaskState.REPORTING,
+            TaskState.COMPLETED,
+        ]
+
+        if target not in state_path:
+            return
+
+        target_index = state_path.index(target)
+
+        for next_state in state_path[:target_index + 1]:
+            if self._state.can_transition_to(next_state):
+                self._state.transition_to(next_state)
+            elif self._state.current() == next_state:
+                continue
+            else:
+                break
 
     def _save_memory(self) -> None:
         """Persist the current task state and attempt history."""

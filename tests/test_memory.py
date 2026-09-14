@@ -1,3 +1,4 @@
+from mythron.approaches import AttemptStatus
 from mythron.memory import TaskMemory
 
 
@@ -109,3 +110,136 @@ def test_orchestrator_persists_adaptive_attempts(tmp_path):
     assert len(saved["attempts"]) == 2
     assert saved["attempts"][0]["status"] == "FAILED"
     assert saved["attempts"][1]["status"] == "SUCCEEDED"
+
+
+def test_memory_load_or_empty_restores_saved_task(tmp_path):
+    memory = TaskMemory(str(tmp_path / "memory.json"))
+
+    saved = {
+        "objective": "Resume authorized assessment",
+        "scope": "authorized testing only",
+        "state": "DISCOVERY",
+        "attempts": [
+            {
+                "id": 1,
+                "approach": "recon_port_scan",
+                "status": "FAILED",
+                "failure_reason": "No useful result",
+                "result": "",
+                "observations": ["No useful ports found"],
+            }
+        ],
+    }
+
+    memory.save(saved)
+
+    restored = memory.load_or_empty()
+
+    assert restored == saved
+    assert restored["state"] == "DISCOVERY"
+    assert restored["attempts"][0]["status"] == "FAILED"
+
+
+def test_memory_load_or_empty_when_missing(tmp_path):
+    memory = TaskMemory(str(tmp_path / "missing.json"))
+
+    restored = memory.load_or_empty()
+
+    assert restored == {
+        "objective": "",
+        "scope": "",
+        "state": None,
+        "attempts": [],
+    }
+
+
+def test_orchestrator_restores_previous_attempts(tmp_path):
+    from mythron.executors import MockApproachExecutor
+    from mythron.orchestrator import AgentOrchestrator
+
+    memory = TaskMemory(str(tmp_path / "memory.json"))
+
+    memory.save(
+        {
+            "objective": "Resume authorized assessment",
+            "scope": "authorized testing only",
+            "state": "DISCOVERY",
+            "attempts": [
+                {
+                    "id": 1,
+                    "approach": "recon_port_scan",
+                    "status": "FAILED",
+                    "result": "No useful result",
+                    "failure_reason": "Target silent",
+                    "observations": ["No useful ports"],
+                }
+            ],
+        }
+    )
+
+    agent = AgentOrchestrator(
+        reasoning_core=None,
+        executor=MockApproachExecutor(),
+        memory=memory,
+    )
+
+    # Register the same approaches that exist in the saved task.
+    for approach in agent._default_approaches():
+        agent.history.add_approach(approach)
+
+    agent._restore_memory()
+
+    assert agent.history.approaches_tried() == [1]
+    assert agent.history.approaches_failed() == [1]
+    assert len(agent.history.all_attempts()) == 1
+    assert agent.history.all_attempts()[0].status == AttemptStatus.FAILED
+
+
+def test_run_resume_uses_persisted_history(tmp_path):
+    from mythron.executors import MockApproachExecutor
+    from mythron.orchestrator import AgentOrchestrator
+
+    memory = TaskMemory(str(tmp_path / "memory.json"))
+
+    memory.save(
+        {
+            "objective": "Resume authorized assessment",
+            "scope": "authorized testing only",
+            "state": "DISCOVERY",
+            "attempts": [
+                {
+                    "id": 1,
+                    "approach": "recon_port_scan",
+                    "status": "FAILED",
+                    "result": "No useful result",
+                    "failure_reason": "Target silent",
+                    "observations": ["No useful ports"],
+                }
+            ],
+        }
+    )
+
+    executor = MockApproachExecutor()
+
+    agent = AgentOrchestrator(
+        reasoning_core=None,
+        executor=executor,
+        memory=memory,
+        max_attempts=10,
+    )
+
+    status = agent.run(
+        objective="Resume authorized assessment",
+        scope="authorized testing only",
+        resume=True,
+    )
+
+    assert status == "COMPLETED"
+
+    attempts = agent.history.all_attempts()
+
+    assert len(attempts) == 2
+    assert attempts[0].status == AttemptStatus.FAILED
+    assert attempts[1].status == AttemptStatus.SUCCEEDED
+
+    assert attempts[0].approach_id != attempts[1].approach_id
