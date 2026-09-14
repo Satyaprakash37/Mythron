@@ -14,7 +14,7 @@ def main() -> int:
     print("Paste your Gemini API key when prompted.")
     print("Input will be HIDDEN (no characters shown).")
     print()
-    key = getpass.getpass("[REDACTED]: ")
+    key = getpass.getpass("Paste your Gemini API key (input hidden): ")
     if len(key) < 20:
         print(f"ERROR: key too short ({len(key)} chars). Aborting.")
         return 1
