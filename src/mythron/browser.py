@@ -15,6 +15,7 @@ class BrowserObservation:
     title: str
     text: str
     links: List[str] = field(default_factory=list)
+    forms: List[str] = field(default_factory=list)
 
 
 class BrowserAgent:
@@ -66,11 +67,21 @@ class BrowserAgent:
                 .filter(href => href)"""
             )
 
+            forms = page.locator("form").evaluate_all(
+                """elements => elements
+                .map(form => ({
+                    action: form.action || "",
+                    method: (form.method || "get").toUpperCase()
+                }))
+                .map(form => `${form.method} ${form.action}`)"""
+            )
+
             return BrowserObservation(
                 url=page.url,
                 title=page.title(),
                 text=page.locator("body").inner_text(),
                 links=links,
+                forms=forms,
             )
         finally:
             page.close()

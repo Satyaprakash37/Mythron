@@ -39,3 +39,15 @@ def test_browser_requires_start():
         assert False, "Expected RuntimeError"
     except RuntimeError as exc:
         assert "not started" in str(exc)
+
+def test_browser_agent_discovers_forms():
+    agent = BrowserAgent(headless=True)
+    agent.start()
+
+    try:
+        observation = agent.inspect("https://example.com")
+
+        assert hasattr(observation, "forms")
+        assert isinstance(observation.forms, list)
+    finally:
+        agent.stop()
