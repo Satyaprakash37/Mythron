@@ -78,3 +78,30 @@ def test_lifecycle_stop_blocks_capabilities():
 
     assert assessment.status == AssessmentStatus.STOPPED
     assert not assessment.can_use_capability("browser_inspect")
+
+
+def test_scope_allows_exact_target():
+    scope = AssessmentScope(
+        target="http://127.0.0.1:3000",
+        authorized=True,
+    )
+
+    assert scope.allows_target("http://127.0.0.1:3000")
+
+
+def test_scope_rejects_different_target():
+    scope = AssessmentScope(
+        target="http://127.0.0.1:3000",
+        authorized=True,
+    )
+
+    assert not scope.allows_target("http://127.0.0.1:4000")
+
+
+def test_unauthorized_scope_rejects_target():
+    scope = AssessmentScope(
+        target="http://127.0.0.1:3000",
+        authorized=False,
+    )
+
+    assert not scope.allows_target("http://127.0.0.1:3000")

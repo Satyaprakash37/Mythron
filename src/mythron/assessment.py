@@ -34,6 +34,10 @@ class AssessmentScope:
             and capability_name in self.allowed_capabilities
         )
 
+    def allows_target(self, target: str) -> bool:
+        """Return True when the target exactly matches the assessment target."""
+        return self.authorized and target.strip() == self.target.strip()
+
 
 @dataclass
 class Assessment:

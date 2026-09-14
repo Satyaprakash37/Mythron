@@ -45,12 +45,13 @@ class ReasoningCore:
         api_key: Optional[str] = None,
         temperature: float = DEFAULT_TEMPERATURE,
         max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS,
+        client=None,
     ) -> None:
         self.model = model
         self.temperature = temperature
         self.max_output_tokens = max_output_tokens
         self._api_key = api_key or load_api_key()
-        self._client = genai.Client(api_key=self._api_key)
+        self._client = client or genai.Client(api_key=self._api_key)
 
     def reason(self, prompt: str) -> str:
         """Send prompt to LLM, return text response."""

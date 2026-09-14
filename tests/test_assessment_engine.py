@@ -131,3 +131,15 @@ def test_disabled_capability_is_blocked():
 
     assert execution.allowed is False
     assert "disabled" in execution.reason
+
+
+def test_different_target_is_blocked():
+    _, engine = make_engine()
+
+    approach = make_approach()
+    approach.description = "http://127.0.0.1:4000"
+
+    execution = engine.execute("browser", approach)
+
+    assert execution.allowed is False
+    assert "target does not match" in execution.reason

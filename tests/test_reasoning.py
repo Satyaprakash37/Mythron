@@ -41,13 +41,31 @@ def test_reasoning_core_rejects_empty_prompt():
         pass
 
 
+class FakeResponse:
+    text = "TEST OK"
+
+
+class FakeModels:
+    def generate_content(self, **kwargs):
+        return FakeResponse()
+
+
+class FakeClient:
+    def __init__(self):
+        self.models = FakeModels()
+
+
 def test_reasoning_core_returns_text_for_simple_prompt():
-    """reason() must return non-empty text for a valid prompt."""
-    core = ReasoningCore()
+    """reason() must return non-empty text without calling Gemini."""
+    core = ReasoningCore(
+        api_key="test-key-that-is-long-enough",
+        client=FakeClient(),
+    )
+
     response = core.reason("Reply with exactly: TEST OK")
+
     assert isinstance(response, str)
-    assert len(response) > 0
-    assert any(word in response.upper() for word in ["TEST", "OK"])
+    assert response == "TEST OK"
 
 
 def test_reasoning_core_custom_model():

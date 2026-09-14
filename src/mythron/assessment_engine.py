@@ -54,6 +54,12 @@ class AssessmentEngine:
                 reason=f"Capability is not allowed: {capability_name}",
             )
 
+        if not self._assessment.scope.allows_target(approach.description):
+            return AssessmentExecution(
+                allowed=False,
+                reason="Approach target does not match the authorized assessment target.",
+            )
+
         capability = self._capabilities.get(capability_name)
 
         if capability is None:
