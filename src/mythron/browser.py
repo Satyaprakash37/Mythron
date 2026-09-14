@@ -25,6 +25,11 @@ class BrowserAgent:
         self._playwright = None
         self._browser: Browser | None = None
 
+    @property
+    def is_started(self) -> bool:
+        """Return True when the browser is currently running."""
+        return self._browser is not None
+
     def start(self) -> None:
         """Start the Playwright browser."""
         self._playwright = sync_playwright().start()
