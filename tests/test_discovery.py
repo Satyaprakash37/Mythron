@@ -186,3 +186,47 @@ def test_discovery_result_can_be_converted_to_inventory_finding():
     assert finding.severity == Severity.INFO
     assert finding.confidence == 1.0
     assert len(finding.evidence) == 3
+
+def test_discovery_can_store_inventory_finding():
+    engine = DiscoveryEngine()
+
+    observation = BrowserObservation(
+        url="http://127.0.0.1:3000/",
+        title="Juice Shop",
+        text="Authorized local application",
+        links=[
+            "http://127.0.0.1:3000/login",
+            "http://127.0.0.1:3000/search",
+        ],
+        forms=[
+            "POST http://127.0.0.1:3000/rest/user/login",
+        ],
+    )
+
+    result = engine.record(observation)
+
+    finding = engine.store_inventory_finding(result)
+
+    assert finding.title == "Discovered Web Application Surface"
+    assert finding.target == result.target
+    assert finding.severity.value == "INFO"
+    assert finding.confidence == 1.0
+    assert len(engine.findings().all()) == 1
+
+def test_discovery_does_not_duplicate_same_inventory_finding():
+    engine = DiscoveryEngine()
+
+    observation = BrowserObservation(
+        url="http://127.0.0.1:3000/",
+        title="Juice Shop",
+        text="Authorized local application",
+        links=["http://127.0.0.1:3000/login"],
+        forms=[],
+    )
+
+    result = engine.record(observation)
+
+    engine.store_inventory_finding(result)
+    engine.store_inventory_finding(result)
+
+    assert len(engine.findings().all()) == 1

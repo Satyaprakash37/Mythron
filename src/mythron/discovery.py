@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import List
 
 from mythron.browser import BrowserObservation
-from mythron.findings import Finding, Severity
+from mythron.findings import Finding, FindingStore, Severity
 
 
 @dataclass
@@ -28,6 +28,7 @@ class DiscoveryEngine:
     def __init__(self) -> None:
         """Initialize an empty discovery inventory."""
         self._results: List[DiscoveryResult] = []
+        self._findings = FindingStore()
 
     def record(self, observation: BrowserObservation) -> DiscoveryResult:
         """Convert and store a browser observation."""
@@ -73,6 +74,24 @@ class DiscoveryEngine:
                 f"Forms discovered: {len(result.forms)}",
             ],
         )
+
+    def store_inventory_finding(self, result: DiscoveryResult) -> Finding:
+        """Convert a discovery result and store it unless it already exists."""
+
+        for existing in self._findings.all():
+            if (
+                existing.title == "Discovered Web Application Surface"
+                and existing.target == result.target
+            ):
+                return existing
+
+        finding = self.to_inventory_finding(result)
+        return self._findings.add(finding)
+
+    def findings(self) -> FindingStore:
+        """Return the inventory finding store."""
+
+        return self._findings
 
     def results(self) -> List[DiscoveryResult]:
         """Return all recorded discovery results."""
