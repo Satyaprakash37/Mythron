@@ -171,3 +171,9 @@ def test_assessment_engine_can_store_discovery_inventory():
     assert finding.target == observation.url
     assert finding.title == "Discovered Web Application Surface"
     assert len(discovery.findings().all()) == 1
+    assert assessment.findings_count == 1
+
+    assessment_engine.record_discovery(observation)
+
+    assert len(discovery.findings().all()) == 1
+    assert assessment.findings_count == 1

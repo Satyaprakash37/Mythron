@@ -56,7 +56,15 @@ class AssessmentEngine:
             )
 
         result = self._discovery.record(observation)
-        return self._discovery.store_inventory_finding(result)
+
+        before_count = len(self._discovery.findings().all())
+        finding = self._discovery.store_inventory_finding(result)
+        after_count = len(self._discovery.findings().all())
+
+        if after_count > before_count:
+            self._assessment.findings_count += 1
+
+        return finding
 
     def execute(self, capability_name: str, approach: Approach) -> AssessmentExecution:
         """Execute an approach only when all control checks pass."""
