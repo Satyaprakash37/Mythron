@@ -15,10 +15,10 @@ from mythron.approaches import (
 from mythron.assessment import Assessment
 from mythron.capabilities import CapabilityRegistry
 from mythron.executors import ApproachExecutor, ExecutionResult
-from mythron.findings import Finding
-from mythron.findings import Finding
+from mythron.findings import Finding, FindingStore
 from mythron.browser import BrowserObservation
 from mythron.discovery import DiscoveryEngine
+from mythron.security_signals import SecuritySignalDetector
 
 
 @dataclass
@@ -39,11 +39,16 @@ class AssessmentEngine:
         capabilities: CapabilityRegistry,
         executors: Dict[str, ApproachExecutor],
         discovery: DiscoveryEngine | None = None,
+        security_signal_detector: SecuritySignalDetector | None = None,
     ) -> None:
         self._assessment = assessment
         self._capabilities = capabilities
         self._executors = executors
         self._discovery = discovery or DiscoveryEngine()
+        self._security_signal_detector = (
+            security_signal_detector or SecuritySignalDetector()
+        )
+        self._security_signal_findings = FindingStore()
 
     def record_discovery(self, observation: BrowserObservation) -> Finding:
         """Record a controlled browser observation as discovery inventory."""
@@ -65,6 +70,35 @@ class AssessmentEngine:
             self._assessment.findings_count += 1
 
         return finding
+
+    def analyze_security_signals(
+        self,
+        observation: BrowserObservation,
+    ) -> list[Finding]:
+        """Analyze an authorized observation for passive security signals."""
+        if not self._assessment.scope.authorized:
+            raise PermissionError(
+                "Security signal analysis requires an authorized assessment."
+            )
+
+        if not self._assessment.scope.allows_target(observation.url):
+            raise PermissionError(
+                "Security signal target does not match the authorized assessment target."
+            )
+
+        findings = self._security_signal_detector.analyze(observation)
+
+        new_findings = 0
+        for finding in findings:
+            before_count = len(self._security_signal_findings.all())
+            stored = self._security_signal_findings.add(finding)
+            after_count = len(self._security_signal_findings.all())
+
+            if after_count > before_count:
+                new_findings += 1
+
+        self._assessment.findings_count += new_findings
+        return findings
 
     def execute(self, capability_name: str, approach: Approach) -> AssessmentExecution:
         """Execute an approach only when all control checks pass."""

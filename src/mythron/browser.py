@@ -16,6 +16,15 @@ class BrowserObservation:
     text: str
     links: List[str] = field(default_factory=list)
     forms: List[str] = field(default_factory=list)
+    headers: dict[str, str] = field(default_factory=dict)
+
+    def has_header(self, name: str) -> bool:
+        """Return True when the response contains the given header."""
+        requested = name.strip().lower()
+        return any(
+            header_name.strip().lower() == requested
+            for header_name in self.headers
+        )
 
 
 class BrowserAgent:
@@ -60,7 +69,9 @@ class BrowserAgent:
 
         page = self._browser.new_page()
         try:
-            page.goto(url, wait_until="domcontentloaded")
+            response = page.goto(url, wait_until="domcontentloaded")
+            headers = dict(response.headers) if response is not None else {}
+
             links = page.locator("a").evaluate_all(
                 """elements => elements
                 .map(a => a.href)
@@ -82,6 +93,7 @@ class BrowserAgent:
                 text=page.locator("body").inner_text(),
                 links=links,
                 forms=forms,
+                headers=headers,
             )
         finally:
             page.close()

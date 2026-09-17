@@ -177,3 +177,36 @@ def test_assessment_engine_can_store_discovery_inventory():
 
     assert len(discovery.findings().all()) == 1
     assert assessment.findings_count == 1
+
+
+def test_assessment_engine_can_analyze_security_signals():
+    from mythron.browser import BrowserObservation
+    from mythron.discovery import DiscoveryEngine
+    from mythron.security_signals import SecuritySignalDetector
+
+    assessment, base_engine = make_engine()
+
+    assessment_engine = AssessmentEngine(
+        assessment=assessment,
+        capabilities=base_engine._capabilities,
+        executors=base_engine._executors,
+        discovery=DiscoveryEngine(),
+        security_signal_detector=SecuritySignalDetector(),
+    )
+
+    observation = BrowserObservation(
+        url="http://127.0.0.1:3000/",
+        title="Juice Shop",
+        text="Authorized local application",
+        headers={
+            "x-content-type-options": "nosniff",
+            "x-frame-options": "SAMEORIGIN",
+        },
+    )
+
+    findings = assessment_engine.analyze_security_signals(observation)
+
+    assert len(findings) == 1
+    assert findings[0].title == "Missing Content-Security-Policy Header"
+    assert findings[0].target == observation.url
+    assert assessment.findings_count == 1
