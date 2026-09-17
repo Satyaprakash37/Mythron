@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from typing import List
 
 from mythron.browser import BrowserObservation
+from mythron.findings import Finding, Severity
 
 
 @dataclass
@@ -53,6 +54,25 @@ class DiscoveryEngine:
 
         self._results.append(result)
         return result
+
+    def to_inventory_finding(self, result: DiscoveryResult) -> Finding:
+        """Convert a discovery result into an informational inventory finding."""
+
+        return Finding(
+            title="Discovered Web Application Surface",
+            description=(
+                "A web application page and associated endpoints "
+                "were observed during authorized discovery."
+            ),
+            target=result.target,
+            severity=Severity.INFO,
+            confidence=1.0,
+            evidence=[
+                f"Page title: {result.title}",
+                f"Links discovered: {len(result.links)}",
+                f"Forms discovered: {len(result.forms)}",
+            ],
+        )
 
     def results(self) -> List[DiscoveryResult]:
         """Return all recorded discovery results."""

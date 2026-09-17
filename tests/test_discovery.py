@@ -119,3 +119,70 @@ def test_discovery_engine_summarizes_inventory():
     assert summary["pages"] == 2
     assert summary["unique_links"] == 2
     assert summary["unique_forms"] == 1
+
+def test_discovery_can_create_inventory_findings():
+    from mythron.findings import Finding, FindingStore, Severity
+
+    engine = DiscoveryEngine()
+    store = FindingStore()
+
+    observation = BrowserObservation(
+        url="http://127.0.0.1:3000",
+        title="Juice Shop",
+        text="Authorized local application",
+        links=["http://127.0.0.1:3000/login"],
+        forms=["POST http://127.0.0.1:3000/login"],
+    )
+
+    result = engine.record(observation)
+
+    finding = store.add(
+        Finding(
+            title="Discovered Web Application Surface",
+            description=(
+                "A web application page and associated endpoints "
+                "were observed during authorized discovery."
+            ),
+            target=result.target,
+            severity=Severity.INFO,
+            confidence=1.0,
+            evidence=[
+                f"Page title: {result.title}",
+                f"Links discovered: {len(result.links)}",
+                f"Forms discovered: {len(result.forms)}",
+            ],
+        )
+    )
+
+    assert store.summary()["total"] == 1
+    assert finding.target == "http://127.0.0.1:3000"
+    assert finding.severity == Severity.INFO
+    assert len(finding.evidence) == 3
+
+def test_discovery_result_can_be_converted_to_inventory_finding():
+    from mythron.findings import Severity
+
+    engine = DiscoveryEngine()
+
+    result = engine.record(
+        BrowserObservation(
+            url="http://127.0.0.1:3000/",
+            title="Juice Shop",
+            text="Authorized local application",
+            links=[
+                "http://127.0.0.1:3000/login",
+                "http://127.0.0.1:3000/search",
+            ],
+            forms=[
+                "POST http://127.0.0.1:3000/rest/user/login",
+            ],
+        )
+    )
+
+    finding = engine.to_inventory_finding(result)
+
+    assert finding.title == "Discovered Web Application Surface"
+    assert finding.target == result.target
+    assert finding.severity == Severity.INFO
+    assert finding.confidence == 1.0
+    assert len(finding.evidence) == 3
