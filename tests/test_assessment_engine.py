@@ -210,3 +210,24 @@ def test_assessment_engine_can_analyze_security_signals():
     assert findings[0].title == "Missing Content-Security-Policy Header"
     assert findings[0].target == observation.url
     assert assessment.findings_count == 1
+
+
+def test_assessment_engine_can_analyze_finding():
+    from mythron.findings import Finding, Severity
+
+    _, engine = make_engine()
+
+    finding = Finding(
+        title="Missing CSP",
+        description="CSP header was not observed.",
+        target="http://127.0.0.1:3000",
+        severity=Severity.LOW,
+        confidence=0.9,
+        evidence=["CSP header missing"],
+    )
+
+    analysis = engine.analyze_finding(finding)
+
+    assert analysis.finding is finding
+    assert analysis.validation_needed is True
+    assert analysis.is_actionable() is True

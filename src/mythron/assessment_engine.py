@@ -19,6 +19,7 @@ from mythron.findings import Finding, FindingStore
 from mythron.browser import BrowserObservation
 from mythron.discovery import DiscoveryEngine
 from mythron.security_signals import SecuritySignalDetector
+from mythron.finding_analysis import FindingAnalysis, FindingAnalyzer
 
 
 @dataclass
@@ -40,6 +41,7 @@ class AssessmentEngine:
         executors: Dict[str, ApproachExecutor],
         discovery: DiscoveryEngine | None = None,
         security_signal_detector: SecuritySignalDetector | None = None,
+        finding_analyzer: FindingAnalyzer | None = None,
     ) -> None:
         self._assessment = assessment
         self._capabilities = capabilities
@@ -49,6 +51,7 @@ class AssessmentEngine:
             security_signal_detector or SecuritySignalDetector()
         )
         self._security_signal_findings = FindingStore()
+        self._finding_analyzer = finding_analyzer or FindingAnalyzer()
 
     def record_discovery(self, observation: BrowserObservation) -> Finding:
         """Record a controlled browser observation as discovery inventory."""
@@ -99,6 +102,10 @@ class AssessmentEngine:
 
         self._assessment.findings_count += new_findings
         return findings
+
+    def analyze_finding(self, finding: Finding) -> FindingAnalysis:
+        """Analyze a finding using the configured finding analyzer."""
+        return self._finding_analyzer.analyze(finding)
 
     def execute(self, capability_name: str, approach: Approach) -> AssessmentExecution:
         """Execute an approach only when all control checks pass."""
