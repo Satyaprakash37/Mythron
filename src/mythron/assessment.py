@@ -35,8 +35,14 @@ class AssessmentScope:
         )
 
     def allows_target(self, target: str) -> bool:
-        """Return True when the target exactly matches the assessment target."""
-        return self.authorized and target.strip() == self.target.strip()
+        """Return True when the target matches the authorized assessment target."""
+        if not self.authorized:
+            return False
+
+        authorized_target = self.target.strip().rstrip("/")
+        requested_target = target.strip().rstrip("/")
+
+        return requested_target == authorized_target
 
 
 @dataclass

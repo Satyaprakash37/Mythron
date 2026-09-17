@@ -143,3 +143,31 @@ def test_different_target_is_blocked():
 
     assert execution.allowed is False
     assert "target does not match" in execution.reason
+
+def test_assessment_engine_can_store_discovery_inventory():
+    from mythron.browser import BrowserObservation
+    from mythron.discovery import DiscoveryEngine
+
+    assessment, base_engine = make_engine()
+    discovery = DiscoveryEngine()
+
+    assessment_engine = AssessmentEngine(
+        assessment=assessment,
+        capabilities=base_engine._capabilities,
+        executors=base_engine._executors,
+        discovery=discovery,
+    )
+
+    observation = BrowserObservation(
+        url="http://127.0.0.1:3000/",
+        title="Juice Shop",
+        text="Authorized local application",
+        links=["http://127.0.0.1:3000/login"],
+        forms=[],
+    )
+
+    finding = assessment_engine.record_discovery(observation)
+
+    assert finding.target == observation.url
+    assert finding.title == "Discovered Web Application Surface"
+    assert len(discovery.findings().all()) == 1

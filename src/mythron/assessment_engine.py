@@ -15,6 +15,10 @@ from mythron.approaches import (
 from mythron.assessment import Assessment
 from mythron.capabilities import CapabilityRegistry
 from mythron.executors import ApproachExecutor, ExecutionResult
+from mythron.findings import Finding
+from mythron.findings import Finding
+from mythron.browser import BrowserObservation
+from mythron.discovery import DiscoveryEngine
 
 
 @dataclass
@@ -34,10 +38,25 @@ class AssessmentEngine:
         assessment: Assessment,
         capabilities: CapabilityRegistry,
         executors: Dict[str, ApproachExecutor],
+        discovery: DiscoveryEngine | None = None,
     ) -> None:
         self._assessment = assessment
         self._capabilities = capabilities
         self._executors = executors
+        self._discovery = discovery or DiscoveryEngine()
+
+    def record_discovery(self, observation: BrowserObservation) -> Finding:
+        """Record a controlled browser observation as discovery inventory."""
+        if not self._assessment.scope.authorized:
+            raise PermissionError("Discovery requires an authorized assessment.")
+
+        if not self._assessment.scope.allows_target(observation.url):
+            raise PermissionError(
+                "Discovery target does not match the authorized assessment target."
+            )
+
+        result = self._discovery.record(observation)
+        return self._discovery.store_inventory_finding(result)
 
     def execute(self, capability_name: str, approach: Approach) -> AssessmentExecution:
         """Execute an approach only when all control checks pass."""
