@@ -20,6 +20,7 @@ from mythron.browser import BrowserObservation
 from mythron.discovery import DiscoveryEngine
 from mythron.security_signals import SecuritySignalDetector
 from mythron.finding_analysis import FindingAnalysis, FindingAnalyzer
+from mythron.validation import ValidationRequest
 
 
 @dataclass
@@ -106,6 +107,56 @@ class AssessmentEngine:
     def analyze_finding(self, finding: Finding) -> FindingAnalysis:
         """Analyze a finding using the configured finding analyzer."""
         return self._finding_analyzer.analyze(finding)
+
+    def request_validation(self, finding: Finding) -> ValidationRequest:
+        """Create a controlled validation request for a finding."""
+        if not self._assessment.scope.authorized:
+            raise PermissionError(
+                "Validation requires an authorized assessment."
+            )
+
+        if not self._assessment.scope.allows_target(finding.target):
+            raise PermissionError(
+                "Validation target does not match the authorized assessment target."
+            )
+
+        return ValidationRequest(finding=finding)
+
+    def start_validation(
+        self,
+        request: ValidationRequest,
+    ) -> ValidationRequest:
+        """Start a validation request after its approval checks."""
+        if not self._assessment.scope.authorized:
+            raise PermissionError(
+                "Validation requires an authorized assessment."
+            )
+
+        if not self._assessment.scope.allows_target(request.finding.target):
+            raise PermissionError(
+                "Validation target does not match the authorized assessment target."
+            )
+
+        request.start()
+        return request
+
+    def complete_validation(
+        self,
+        request: ValidationRequest,
+    ) -> ValidationRequest:
+        """Complete an active validation request."""
+        if not self._assessment.scope.authorized:
+            raise PermissionError(
+                "Validation requires an authorized assessment."
+            )
+
+        if not self._assessment.scope.allows_target(request.finding.target):
+            raise PermissionError(
+                "Validation target does not match the authorized assessment target."
+            )
+
+        request.complete()
+        return request
 
     def execute(self, capability_name: str, approach: Approach) -> AssessmentExecution:
         """Execute an approach only when all control checks pass."""

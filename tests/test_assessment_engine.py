@@ -231,3 +231,70 @@ def test_assessment_engine_can_analyze_finding():
     assert analysis.finding is finding
     assert analysis.validation_needed is True
     assert analysis.is_actionable() is True
+
+
+def test_assessment_engine_can_create_validation_request():
+    from mythron.findings import Finding, Severity
+
+    _, engine = make_engine()
+
+    finding = Finding(
+        title="Missing CSP",
+        description="CSP header was not observed.",
+        target="http://127.0.0.1:3000",
+        severity=Severity.LOW,
+        confidence=0.9,
+        evidence=["CSP header missing"],
+    )
+
+    request = engine.request_validation(finding)
+
+    assert request.finding is finding
+    assert request.status.value == "PENDING"
+    assert request.approved is False
+
+
+def test_assessment_engine_can_start_approved_validation():
+    from mythron.findings import Finding, Severity
+
+    _, engine = make_engine()
+
+    finding = Finding(
+        title="Missing CSP",
+        description="CSP header was not observed.",
+        target="http://127.0.0.1:3000",
+        severity=Severity.LOW,
+        confidence=0.9,
+        evidence=["CSP header missing"],
+    )
+
+    request = engine.request_validation(finding)
+    request.approve()
+
+    started = engine.start_validation(request)
+
+    assert started.status.value == "IN_PROGRESS"
+
+
+def test_assessment_engine_can_complete_validation():
+    from mythron.findings import Finding, Severity
+
+    _, engine = make_engine()
+
+    finding = Finding(
+        title="Missing CSP",
+        description="CSP header was not observed.",
+        target="http://127.0.0.1:3000",
+        severity=Severity.LOW,
+        confidence=0.9,
+        evidence=["CSP header missing"],
+    )
+
+    request = engine.request_validation(finding)
+    request.approve()
+    engine.start_validation(request)
+
+    completed = engine.complete_validation(request)
+
+    assert completed.status.value == "COMPLETED"
+    assert finding.verified is True
