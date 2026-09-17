@@ -230,3 +230,36 @@ def test_discovery_does_not_duplicate_same_inventory_finding():
     engine.store_inventory_finding(result)
 
     assert len(engine.findings().all()) == 1
+
+def test_discovery_stores_separate_findings_for_different_targets():
+    engine = DiscoveryEngine()
+
+    first = engine.record(
+        BrowserObservation(
+            url="http://127.0.0.1:3000/",
+            title="Juice Shop",
+            text="Home page",
+            links=["http://127.0.0.1:3000/login"],
+            forms=[],
+        )
+    )
+
+    second = engine.record(
+        BrowserObservation(
+            url="http://127.0.0.1:3000/login",
+            title="Login",
+            text="Login page",
+            links=[],
+            forms=["POST http://127.0.0.1:3000/rest/user/login"],
+        )
+    )
+
+    first_finding = engine.store_inventory_finding(first)
+    second_finding = engine.store_inventory_finding(second)
+
+    findings = engine.findings().all()
+
+    assert len(findings) == 2
+    assert first_finding.target == first.target
+    assert second_finding.target == second.target
+    assert first_finding.target != second_finding.target
