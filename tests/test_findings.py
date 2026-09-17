@@ -138,3 +138,33 @@ def test_finding_store_deduplicates_same_finding():
     store.add(finding)
 
     assert len(store.all()) == 1
+
+
+def test_finding_cannot_be_verified_before_validation_request():
+    finding = Finding(
+        title="Test Finding",
+        description="Controlled validation test",
+        target="http://127.0.0.1:3000",
+        severity=Severity.LOW,
+        confidence=0.9,
+    )
+
+    finding.mark_verified()
+
+    assert finding.verified is False
+
+
+def test_finding_can_be_verified_after_validation_request():
+    finding = Finding(
+        title="Test Finding",
+        description="Controlled validation test",
+        target="http://127.0.0.1:3000",
+        severity=Severity.LOW,
+        confidence=0.9,
+    )
+
+    finding.request_validation()
+    finding.mark_verified()
+
+    assert finding.validation_requested is True
+    assert finding.verified is True

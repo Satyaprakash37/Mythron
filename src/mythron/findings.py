@@ -37,8 +37,9 @@ class Finding:
         self.validation_requested = True
 
     def mark_verified(self) -> None:
-        """Mark the finding as verified after controlled validation."""
-        self.verified = True
+        """Mark the finding as verified only after validation is requested."""
+        if self.validation_requested:
+            self.verified = True
 
     def add_evidence(self, item: str) -> None:
         """Add an evidence item to the finding."""
