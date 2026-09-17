@@ -7,6 +7,7 @@ It does not execute security actions.
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import List
+from urllib.parse import urldefrag
 
 
 class AssessmentStatus(Enum):
@@ -39,8 +40,12 @@ class AssessmentScope:
         if not self.authorized:
             return False
 
-        authorized_target = self.target.strip().rstrip("/")
-        requested_target = target.strip().rstrip("/")
+        authorized_target = urldefrag(
+            self.target.strip()
+        ).url.rstrip("/")
+        requested_target = urldefrag(
+            target.strip()
+        ).url.rstrip("/")
 
         return requested_target == authorized_target
 

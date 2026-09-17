@@ -105,3 +105,12 @@ def test_unauthorized_scope_rejects_target():
     )
 
     assert not scope.allows_target("http://127.0.0.1:3000")
+
+
+def test_scope_allows_browser_spa_fragment():
+    scope = AssessmentScope(
+        target="http://127.0.0.1:3000",
+        authorized=True,
+    )
+
+    assert scope.allows_target("http://127.0.0.1:3000/#/")
