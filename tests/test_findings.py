@@ -1,4 +1,4 @@
-from mythron.findings import Finding, Severity
+from mythron.findings import Finding, FindingStore, Severity
 
 
 def test_finding_defaults():
@@ -121,3 +121,20 @@ def test_finding_store_summary():
     assert summary["total"] == 2
     assert summary["HIGH"] == 1
     assert summary["LOW"] == 1
+
+
+def test_finding_store_deduplicates_same_finding():
+    store = FindingStore()
+
+    finding = Finding(
+        title="Test Finding",
+        description="Same issue",
+        target="http://127.0.0.1:3000",
+        severity=Severity.LOW,
+        confidence=0.9,
+    )
+
+    store.add(finding)
+    store.add(finding)
+
+    assert len(store.all()) == 1

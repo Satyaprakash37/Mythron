@@ -56,6 +56,14 @@ class FindingStore:
         self._findings: List[Finding] = []
 
     def add(self, finding: Finding) -> Finding:
+        for existing in self._findings:
+            if (
+                existing.title == finding.title
+                and existing.target == finding.target
+                and existing.severity == finding.severity
+            ):
+                return existing
+
         self._findings.append(finding)
         return finding
 
