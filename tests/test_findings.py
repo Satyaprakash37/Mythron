@@ -61,3 +61,63 @@ def test_validation_and_verification():
     finding.mark_verified()
 
     assert finding.verified is True
+
+def test_finding_store_tracks_findings():
+    from mythron.findings import FindingStore
+
+    store = FindingStore()
+
+    first = Finding(
+        title="Exposed Login Endpoint",
+        description="A login endpoint was observed during authorized discovery.",
+        target="http://127.0.0.1:3000/login",
+        severity=Severity.INFO,
+        confidence=0.9,
+    )
+
+    second = Finding(
+        title="Observed Search Endpoint",
+        description="A search endpoint was observed.",
+        target="http://127.0.0.1:3000/search",
+        severity=Severity.INFO,
+        confidence=0.7,
+    )
+
+    store.add(first)
+    store.add(second)
+
+    assert len(store.all()) == 2
+    assert store.all()[0] is first
+    assert store.all()[1] is second
+
+
+def test_finding_store_summary():
+    from mythron.findings import FindingStore
+
+    store = FindingStore()
+
+    store.add(
+        Finding(
+            title="High Finding",
+            description="Example",
+            target="http://127.0.0.1:3000",
+            severity=Severity.HIGH,
+            confidence=0.9,
+        )
+    )
+
+    store.add(
+        Finding(
+            title="Low Finding",
+            description="Example",
+            target="http://127.0.0.1:3000",
+            severity=Severity.LOW,
+            confidence=0.6,
+        )
+    )
+
+    summary = store.summary()
+
+    assert summary["total"] == 2
+    assert summary["HIGH"] == 1
+    assert summary["LOW"] == 1

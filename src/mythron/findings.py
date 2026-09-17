@@ -48,3 +48,28 @@ class Finding:
     def is_high_confidence(self) -> bool:
         """Return True when confidence meets the high-confidence threshold."""
         return self.confidence >= 0.8
+
+class FindingStore:
+    """Collect and summarize findings for one controlled assessment."""
+
+    def __init__(self) -> None:
+        self._findings: List[Finding] = []
+
+    def add(self, finding: Finding) -> Finding:
+        self._findings.append(finding)
+        return finding
+
+    def all(self) -> List[Finding]:
+        return list(self._findings)
+
+    def summary(self) -> dict:
+        summary = {"total": len(self._findings)}
+
+        for severity in Severity:
+            summary[severity.value] = sum(
+                1
+                for finding in self._findings
+                if finding.severity == severity
+            )
+
+        return summary
