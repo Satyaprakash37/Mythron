@@ -18,11 +18,11 @@ The system must not treat arbitrary Internet assets as automatically authorized.
 
 ## Current Phase
 
-Phase 0 — Project Bootstrap. See PROJECT_STATUS.md.
+Phase 8 — Evidence + Reporting. See PROJECT_STATUS.md.
 
 ## Tech Stack
 
 - Language: Python 3.14
 - OS: Kali GNU/Linux Rolling (2026.3)
 - AI Core: API-based reasoning (local inference not viable — see ARCHITECTURE.md)
-- Storage: Local filesystem (Phase 0); database later
+- Storage: Local filesystem; database planned for a later phase

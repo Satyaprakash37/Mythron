@@ -4,11 +4,11 @@
 
 ## CURRENT PHASE
 
-Phase 7 — Controlled Validation
+Phase 8 — Evidence + Reporting
 
 ## CURRENT STATUS
 
-Phases 0–6 are implemented and tested. Phase 7 is the current development phase.
+Phases 0–7 are implemented and tested. Phase 8 is the current development phase.
 
 The project currently provides:
 - AI reasoning through Google Gemini
@@ -74,23 +74,36 @@ The project currently provides:
 - [x] AssessmentEngine finding-analysis integration
 - [x] Assessment and finding-analysis tests
 
-## PHASE 7 — CONTROLLED VALIDATION
+## COMPLETED PHASE 7 — CONTROLLED VALIDATION
+
+- [x] Define controlled validation workflow
+- [x] Add explicit human approval gate
+- [x] Implement validation state transitions
+- [x] Define safe validation workflow boundary
+- [x] Handle validation evidence
+- [x] Add validation tests
+- [x] Integrate validation into AssessmentEngine
+- [x] Integrate validation lifecycle states
+
+Validation remains explicitly controlled and scoped. The implementation does not perform uncontrolled exploitation or actions outside the authorized assessment boundary.
+
+## PHASE 8 — EVIDENCE + REPORTING
 
 ### Goals
-- [ ] Define controlled validation workflow
-- [ ] Add explicit human approval gate
-- [ ] Implement validation state transitions
-- [ ] Define safe validation executor interface
-- [ ] Handle validation evidence
-- [ ] Add validation tests
+- [x] Evidence collection layer
+- [x] Structured assessment report model
+- [x] Report generation from findings
+- [x] Evidence integration into reports
+- [x] AssessmentEngine reporting integration
+- [x] End-to-end discovery → findings → validation → evidence → reporting workflow
 
-Validation must remain explicitly controlled and scoped. Phase 7 should not introduce uncontrolled exploitation or actions outside the authorized assessment boundary.
+The reporting layer consumes existing findings and evidence. It does not perform active security actions.
 
 ## TEST STATUS
 
 Latest full test suite:
 
-- **77 passed**
+- **Current full suite: 105 passed**
 - **0 failed**
 - **1 warning**
 
@@ -129,4 +142,4 @@ The warning is a Python 3.14 deprecation warning emitted by the Google GenAI dep
 
 ## NEXT STEP
 
-Begin Phase 7 implementation with the controlled validation design and human approval boundary.
+Continue Phase 8 implementation with evidence/reporting hardening and end-to-end workflow integration.

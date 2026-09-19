@@ -22,6 +22,7 @@ from mythron.security_signals import SecuritySignalDetector
 from mythron.finding_analysis import FindingAnalysis, FindingAnalyzer
 from mythron.validation import ValidationRequest
 from mythron.evidence import EvidenceCollector
+from mythron.reporting import AssessmentReport, ReportGenerator
 
 
 @dataclass
@@ -55,6 +56,7 @@ class AssessmentEngine:
         self._security_signal_findings = FindingStore()
         self._finding_analyzer = finding_analyzer or FindingAnalyzer()
         self._evidence_collector = EvidenceCollector()
+        self._report_generator = ReportGenerator(self._evidence_collector)
 
     def record_discovery(self, observation: BrowserObservation) -> Finding:
         """Record a controlled browser observation as discovery inventory."""
@@ -173,6 +175,23 @@ class AssessmentEngine:
 
         request.complete()
         return request
+
+    def generate_report(self) -> AssessmentReport:
+        """Generate a report from the assessment's collected findings."""
+        if not self._assessment.scope.authorized:
+            raise PermissionError(
+                "Report generation requires an authorized assessment."
+            )
+
+        combined_store = FindingStore()
+
+        for finding in self._discovery.findings().all():
+            combined_store.add(finding)
+
+        for finding in self._security_signal_findings.all():
+            combined_store.add(finding)
+
+        return self._report_generator.generate(combined_store)
 
     def execute(self, capability_name: str, approach: Approach) -> AssessmentExecution:
         """Execute an approach only when all control checks pass."""
