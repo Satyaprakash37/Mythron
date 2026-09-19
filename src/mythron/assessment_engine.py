@@ -21,6 +21,7 @@ from mythron.discovery import DiscoveryEngine
 from mythron.security_signals import SecuritySignalDetector
 from mythron.finding_analysis import FindingAnalysis, FindingAnalyzer
 from mythron.validation import ValidationRequest
+from mythron.evidence import EvidenceCollector
 
 
 @dataclass
@@ -53,6 +54,7 @@ class AssessmentEngine:
         )
         self._security_signal_findings = FindingStore()
         self._finding_analyzer = finding_analyzer or FindingAnalyzer()
+        self._evidence_collector = EvidenceCollector()
 
     def record_discovery(self, observation: BrowserObservation) -> Finding:
         """Record a controlled browser observation as discovery inventory."""
@@ -107,6 +109,20 @@ class AssessmentEngine:
     def analyze_finding(self, finding: Finding) -> FindingAnalysis:
         """Analyze a finding using the configured finding analyzer."""
         return self._finding_analyzer.analyze(finding)
+
+    def collect_evidence(self, finding: Finding) -> list[str]:
+        """Collect existing evidence from a finding without modifying it."""
+        if not self._assessment.scope.authorized:
+            raise PermissionError(
+                "Evidence collection requires an authorized assessment."
+            )
+
+        if not self._assessment.scope.allows_target(finding.target):
+            raise PermissionError(
+                "Evidence target does not match the authorized assessment target."
+            )
+
+        return self._evidence_collector.collect(finding)
 
     def request_validation(self, finding: Finding) -> ValidationRequest:
         """Create a controlled validation request for a finding."""

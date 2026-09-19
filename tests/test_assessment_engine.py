@@ -298,3 +298,21 @@ def test_assessment_engine_can_complete_validation():
 
     assert completed.status.value == "COMPLETED"
     assert finding.verified is True
+
+
+def test_assessment_engine_can_collect_finding_evidence():
+    from mythron.findings import Finding, Severity
+
+    _, engine = make_engine()
+
+    finding = Finding(
+        title="Missing CSP",
+        description="CSP header was not observed.",
+        target="http://127.0.0.1:3000",
+        severity=Severity.LOW,
+        evidence=["CSP header missing", "   ", ""],
+    )
+
+    evidence = engine.collect_evidence(finding)
+
+    assert evidence == ["CSP header missing"]
