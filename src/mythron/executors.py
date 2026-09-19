@@ -28,6 +28,7 @@ class ExecutionResult:
     result: str = ""
     failure_reason: str = ""
     observations: List[str] = field(default_factory=list)
+    data: object | None = None
 
 
 @runtime_checkable

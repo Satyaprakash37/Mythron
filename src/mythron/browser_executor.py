@@ -63,6 +63,7 @@ class BrowserApproachExecutor:
                     f"Links discovered: {len(observation.links)}",
                     observation.text[:500],
                 ],
+                data=observation,
             )
 
         except Exception as exc:

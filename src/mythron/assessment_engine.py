@@ -253,6 +253,12 @@ class AssessmentEngine:
 
         result = executor.execute(approach)
 
+        # Automatically process structured browser observations.
+        # This is passive analysis only; no exploitation is performed.
+        if isinstance(result.data, BrowserObservation):
+            self.record_discovery(result.data)
+            self.analyze_security_signals(result.data)
+
         return AssessmentExecution(
             allowed=True,
             result=result,
