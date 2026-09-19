@@ -130,7 +130,10 @@ class AgentOrchestrator:
             TaskState.DISCOVERY: TaskState.ANALYSIS,
             TaskState.ENUMERATION: TaskState.ANALYSIS,
             TaskState.ANALYSIS: TaskState.FINDINGS,
-            TaskState.FINDINGS: TaskState.REPORTING,
+            TaskState.FINDINGS: TaskState.VALIDATION_REQUESTED,
+            TaskState.VALIDATION_REQUESTED: TaskState.VALIDATING,
+            TaskState.VALIDATING: TaskState.EVIDENCE_COLLECTION,
+            TaskState.EVIDENCE_COLLECTION: TaskState.REPORTING,
             TaskState.REPORTING: TaskState.COMPLETED,
         }
 
@@ -209,6 +212,9 @@ class AgentOrchestrator:
             TaskState.ENUMERATION,
             TaskState.ANALYSIS,
             TaskState.FINDINGS,
+            TaskState.VALIDATION_REQUESTED,
+            TaskState.VALIDATING,
+            TaskState.EVIDENCE_COLLECTION,
             TaskState.REPORTING,
             TaskState.COMPLETED,
         ]
