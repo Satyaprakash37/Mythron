@@ -489,3 +489,97 @@ def test_complete_local_assessment_flow():
         and item.verified is True
         for item in report.findings
     )
+
+def test_assessment_engine_can_create_category_aware_validation_request():
+    from mythron.findings import Finding, Severity
+
+    _, engine = make_engine()
+
+    finding = Finding(
+        title="Missing Content-Security-Policy Header",
+        description="CSP header was not observed.",
+        target="http://127.0.0.1:3000",
+        severity=Severity.LOW,
+        confidence=1.0,
+        evidence=["CSP header missing"],
+    )
+
+    request = engine.request_validation(
+        finding,
+        category="http_response_header",
+    )
+
+    assert request.category == "http_response_header"
+    assert request.finding is finding
+    assert request.status.value == "PENDING"
+
+def test_assessment_engine_can_create_validation_request_from_analysis():
+    from mythron.findings import Finding, Severity
+
+    _, engine = make_engine()
+
+    finding = Finding(
+        title="Missing Content-Security-Policy Header",
+        description="CSP header was not observed.",
+        target="http://127.0.0.1:3000",
+        severity=Severity.LOW,
+        confidence=1.0,
+        evidence=["CSP header missing"],
+    )
+
+    analysis = engine.analyze_finding(finding)
+
+    assert analysis.validation_plan is not None
+    assert analysis.validation_plan.category == "http_response_header"
+
+    request = engine.request_validation(
+        finding,
+        category=analysis.validation_plan.category,
+    )
+
+    assert request.category == "http_response_header"
+    assert request.finding is finding
+
+def test_assessment_engine_can_request_validation_from_analysis():
+    from mythron.findings import Finding, Severity
+
+    _, engine = make_engine()
+
+    finding = Finding(
+        title="Missing Content-Security-Policy Header",
+        description="CSP header was not observed.",
+        target="http://127.0.0.1:3000",
+        severity=Severity.LOW,
+        confidence=1.0,
+        evidence=["CSP header missing"],
+    )
+
+    analysis = engine.analyze_finding(finding)
+
+    request = engine.request_validation_from_analysis(analysis)
+
+    assert request.finding is finding
+    assert request.category == "http_response_header"
+    assert request.status.value == "PENDING"
+    assert request.approved is False
+
+def test_assessment_engine_rejects_validation_without_plan():
+    from mythron.findings import Finding, Severity
+
+    _, engine = make_engine()
+
+    finding = Finding(
+        title="Unvalidated Finding",
+        description="No validation plan is available.",
+        target="http://127.0.0.1:3000",
+        severity=Severity.LOW,
+        confidence=0.2,
+        evidence=[],
+    )
+
+    analysis = engine.analyze_finding(finding)
+
+    assert analysis.validation_plan is None
+
+    with pytest.raises(ValueError, match="validation plan"):
+        engine.request_validation_from_analysis(analysis)

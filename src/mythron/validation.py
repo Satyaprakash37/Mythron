@@ -41,6 +41,7 @@ class ValidationRequest:
     """A controlled validation request for one finding."""
 
     finding: Finding
+    category: str = "generic"
     status: ValidationStatus = ValidationStatus.PENDING
     approved: bool = False
 

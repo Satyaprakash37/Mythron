@@ -35,12 +35,12 @@ class ValidationExecutor:
 
         finding = request.finding
 
-        if finding.title != "Missing Content-Security-Policy Header":
+        if request.category not in self.SUPPORTED_CATEGORIES:
             return ValidationResult(
                 outcome=ValidationOutcome.FAILED,
-                summary="Unsupported validation finding.",
+                summary="Unsupported validation category.",
                 evidence=[
-                    f"Finding title is not supported: {finding.title}"
+                    f"Validation category is not supported: {request.category}"
                 ],
             )
 

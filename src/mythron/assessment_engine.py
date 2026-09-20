@@ -119,6 +119,21 @@ class AssessmentEngine:
         """Analyze a finding using the configured finding analyzer."""
         return self._finding_analyzer.analyze(finding)
 
+    def request_validation_from_analysis(
+        self,
+        analysis: FindingAnalysis,
+    ) -> ValidationRequest:
+        """Create a validation request from an analyzed finding."""
+        if analysis.validation_plan is None:
+            raise ValueError(
+                "Validation cannot be requested without a validation plan."
+            )
+
+        return self.request_validation(
+            analysis.finding,
+            category=analysis.validation_plan.category,
+        )
+
     def collect_evidence(self, finding: Finding) -> list[str]:
         """Collect existing evidence from a finding without modifying it."""
         if not self._assessment.scope.authorized:
@@ -133,7 +148,11 @@ class AssessmentEngine:
 
         return self._evidence_collector.collect(finding)
 
-    def request_validation(self, finding: Finding) -> ValidationRequest:
+    def request_validation(
+        self,
+        finding: Finding,
+        category: str = "generic",
+    ) -> ValidationRequest:
         """Create a controlled validation request for a finding."""
         if not self._assessment.scope.authorized:
             raise PermissionError(
@@ -145,7 +164,7 @@ class AssessmentEngine:
                 "Validation target does not match the authorized assessment target."
             )
 
-        return ValidationRequest(finding=finding)
+        return ValidationRequest(finding=finding, category=category)
 
     def start_validation(
         self,

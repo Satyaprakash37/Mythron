@@ -42,7 +42,10 @@ def make_finding():
 
 
 def make_request():
-    request = ValidationRequest(finding=make_finding())
+    request = ValidationRequest(
+        finding=make_finding(),
+        category="http_response_header",
+    )
     request.approve()
     request.start()
     return request
@@ -122,3 +125,22 @@ def test_validation_executor_rejects_unsupported_finding():
 
     assert result.outcome == ValidationOutcome.FAILED
     assert "Unsupported" in result.summary
+
+def test_validation_executor_uses_request_category():
+    finding = make_finding()
+    finding.title = "Some Other Finding"
+
+    request = ValidationRequest(
+        finding=finding,
+        category="http_response_header",
+    )
+    request.approve()
+    request.start()
+
+    browser = FakeBrowser(make_observation())
+    executor = ValidationExecutor(browser=browser)
+
+    result = executor.execute(request)
+
+    assert result.outcome == ValidationOutcome.CONFIRMED
+    assert "Content-Security-Policy" in result.summary
