@@ -146,3 +146,74 @@ def test_main_window_can_update_assessment_state():
     assert window.assessment_state.text() == "Completed"
 
     window.close()
+
+
+def test_main_window_has_security_console_navigation():
+    from PySide6.QtWidgets import QPushButton
+
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    navigation = [
+        button.text()
+        for button in window.findChildren(QPushButton)
+    ]
+
+    assert "Dashboard" in navigation
+    assert "Assessment" in navigation
+    assert "Findings" in navigation
+    assert "Evidence" in navigation
+    assert "Reasoning" in navigation
+    assert "Training" in navigation
+    assert "Activity" in navigation
+
+    window.close()
+
+
+def test_navigation_buttons_switch_console_view():
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    window.navigate_to("Assessment")
+
+    assert window.current_view.text() == "Assessment"
+
+    window.navigate_to("Findings")
+
+    assert window.current_view.text() == "Findings"
+
+    window.close()
+
+
+def test_main_window_has_security_console_header():
+    from PySide6.QtWidgets import QLabel
+
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    labels = [
+        child.text()
+        for child in window.findChildren(QLabel)
+    ]
+
+    assert "MYTHRON Security Console" in labels
+    assert "AUTHORIZED MODE" in labels
+
+    window.close()
+
+
+def test_main_window_uses_security_console_theme():
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    stylesheet = window.styleSheet()
+
+    assert "background-color" in stylesheet
+    assert "QGroupBox" in stylesheet
+    assert "QPushButton" in stylesheet
+
+    window.close()

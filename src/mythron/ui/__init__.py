@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QMainWindow,
     QPlainTextEdit,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -31,10 +32,83 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("MYTHRON")
         self.resize(1100, 700)
 
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #0b0f14;
+            }
+
+            QWidget {
+                color: #d7e0ea;
+                font-family: "DejaVu Sans";
+                font-size: 13px;
+            }
+
+            QGroupBox {
+                background-color: #111820;
+                border: 1px solid #263442;
+                border-radius: 6px;
+                margin-top: 10px;
+                padding: 10px;
+                font-weight: bold;
+            }
+
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px;
+            }
+
+            QPushButton {
+                background-color: #151e27;
+                border: 1px solid #2d3d4d;
+                border-radius: 5px;
+                padding: 8px 12px;
+                text-align: left;
+            }
+
+            QPushButton:hover {
+                background-color: #1d2a36;
+            }
+
+            QLabel {
+                background-color: transparent;
+            }
+
+            QPlainTextEdit {
+                background-color: #0d131a;
+                border: 1px solid #263442;
+                border-radius: 5px;
+                padding: 6px;
+            }
+        """)
+
         central = QWidget()
         layout = QVBoxLayout(central)
 
+        navigation_panel = QGroupBox("MYTHRON")
+        navigation_layout = QVBoxLayout(navigation_panel)
+
+        for name in (
+            "Dashboard",
+            "Assessment",
+            "Findings",
+            "Evidence",
+            "Reasoning",
+            "Training",
+            "Activity",
+        ):
+            button = QPushButton(name)
+            button.clicked.connect(
+                lambda checked=False, view=name: self.navigate_to(view)
+            )
+            navigation_layout.addWidget(button)
+
+        layout.addWidget(navigation_panel)
+
         brand = QLabel("MYTHRON")
+        console_header = QLabel("MYTHRON Security Console")
+        authorization = QLabel("AUTHORIZED MODE")
+        self.current_view = QLabel("Dashboard")
         dashboard = QLabel("Dashboard")
         system_status = QLabel("System Status")
         assessment = QLabel("Assessment")
@@ -73,6 +147,8 @@ class MainWindow(QMainWindow):
         training_layout.addWidget(self.training_status)
 
         layout.addWidget(brand)
+        layout.addWidget(console_header)
+        layout.addWidget(authorization)
         layout.addWidget(dashboard)
         layout.addWidget(system_status)
         layout.addWidget(assessment_panel)
@@ -81,6 +157,11 @@ class MainWindow(QMainWindow):
         layout.addWidget(training_panel)
 
         self.setCentralWidget(central)
+
+    def navigate_to(self, view: str) -> None:
+        """Switch the active MYTHRON console view."""
+
+        self.current_view.setText(view)
 
     def show_training_report(self, report: dict) -> None:
         """Display a controlled training evaluation summary."""
