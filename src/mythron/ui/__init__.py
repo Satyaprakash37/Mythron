@@ -246,6 +246,58 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(central)
 
+        self.assessment_controller = None
+
+    def attach_controller(self, controller) -> None:
+        """Attach the Phase 11 assessment controller to the UI."""
+
+        self.assessment_controller = controller
+        self.show_target_status(controller.target)
+        self.show_assessment_status(
+            f"Assessment status: {controller.status.value}"
+        )
+
+    def start_assessment(self) -> None:
+        """Start the attached authorized assessment through the controller."""
+
+        if self.assessment_controller is None:
+            self.show_assessment_status("No assessment controller attached.")
+            return
+
+        self.assessment_controller.start()
+
+        status = self.assessment_controller.status.value
+        self.set_assessment_state(status)
+        self.show_assessment_status(
+            f"Assessment status: {status}"
+        )
+
+    def execute_assessment(self):
+        """Execute the controlled browser inspection through the controller."""
+
+        if self.assessment_controller is None:
+            self.show_assessment_status("No assessment controller attached.")
+            return None
+
+        result = self.assessment_controller.execute(
+            capability_name="browser",
+            approach_name="browser_inspect",
+            target=self.assessment_controller.target,
+        )
+
+        if result.allowed and result.result is not None:
+            status = result.result.status.value
+            self.show_assessment_status(
+                f"Assessment execution: {status}"
+            )
+            self.set_assessment_state(status)
+        else:
+            self.show_assessment_status(
+                f"Assessment blocked: {result.reason}"
+            )
+
+        return result
+
     def navigate_to(self, view: str) -> None:
         """Switch the active MYTHRON console view."""
 

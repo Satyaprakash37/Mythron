@@ -588,3 +588,78 @@ def test_activity_log_preserves_event_order():
     assert log.index("First event") < log.index("Second event")
 
     window.close()
+
+def test_main_window_can_attach_assessment_controller():
+    from mythron.ui import MainWindow
+
+    class FakeController:
+        target = "http://127.0.0.1:3000"
+        status = type("Status", (), {"value": "CREATED"})()
+
+    window = MainWindow()
+    controller = FakeController()
+
+    window.attach_controller(controller)
+
+    assert window.assessment_controller is controller
+    assert window.target_status.text() == "http://127.0.0.1:3000"
+
+    window.close()
+
+def test_main_window_can_start_attached_assessment():
+    from mythron.ui import MainWindow
+
+    class FakeController:
+        target = "http://127.0.0.1:3000"
+        status = type("Status", (), {"value": "CREATED"})()
+
+        def start(self):
+            self.status = type("Status", (), {"value": "ACTIVE"})()
+
+    window = MainWindow()
+    controller = FakeController()
+
+    window.attach_controller(controller)
+    window.start_assessment()
+
+    assert controller.status.value == "ACTIVE"
+    assert "ACTIVE" in window.assessment_status.text()
+
+    window.close()
+
+def test_main_window_can_execute_attached_assessment():
+    from mythron.ui import MainWindow
+    from mythron.assessment_engine import AssessmentExecution
+    from mythron.approaches import AttemptStatus
+    from mythron.executors import ExecutionResult
+
+    class FakeController:
+        target = "http://127.0.0.1:3000"
+        status = type("Status", (), {"value": "CREATED"})()
+
+        def start(self):
+            self.status = type("Status", (), {"value": "ACTIVE"})()
+
+        def execute(self, capability_name, approach_name, target):
+            return AssessmentExecution(
+                allowed=True,
+                result=ExecutionResult(
+                    status=AttemptStatus.SUCCEEDED,
+                    result="controlled browser inspection",
+                    observations=["local target observed"],
+                ),
+            )
+
+    window = MainWindow()
+    controller = FakeController()
+
+    window.attach_controller(controller)
+    window.start_assessment()
+
+    result = window.execute_assessment()
+
+    assert result.allowed is True
+    assert result.result.status == AttemptStatus.SUCCEEDED
+    assert "SUCCEEDED" in window.assessment_status.text()
+
+    window.close()
