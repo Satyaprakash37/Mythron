@@ -131,3 +131,16 @@ def evaluate_training_example(reasoner, example: TrainingExample):
         actual=actual,
         notes=f"Category: {example.category}; Safety: {example.safety}",
     )
+
+
+def evaluate_training_examples(reasoner, examples):
+    """Evaluate multiple controlled training examples as one suite."""
+
+    from mythron.evaluation import EvaluationSuite
+
+    suite = EvaluationSuite()
+
+    for example in examples:
+        suite.add(evaluate_training_example(reasoner, example))
+
+    return suite.run()

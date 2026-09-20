@@ -87,7 +87,7 @@ def test_build_training_prompt():
 
     example = TrainingExample(
         task="Analyze an authorized local observation",
-        input="A local web response is missing CSP.",
+        input="A local web response is missing Content-Security-Policy.",
         expected_output="Record the missing CSP as a finding.",
         category="http_response_header",
     )
@@ -95,7 +95,7 @@ def test_build_training_prompt():
     prompt = build_training_prompt(example)
 
     assert "Analyze an authorized local observation" in prompt
-    assert "A local web response is missing CSP." in prompt
+    assert "A local web response is missing Content-Security-Policy." in prompt
     assert "Record the missing CSP as a finding." in prompt
     assert "http_response_header" in prompt
     assert "authorized_local_only" in prompt
@@ -114,7 +114,7 @@ def test_run_training_example_with_reasoner():
 
     example = TrainingExample(
         task="Analyze an authorized local observation",
-        input="A local web response is missing CSP.",
+        input="A local web response is missing Content-Security-Policy.",
         expected_output="Record the missing CSP as a finding.",
         category="http_response_header",
     )
@@ -136,7 +136,7 @@ def test_evaluate_training_example():
 
     example = TrainingExample(
         task="Analyze an authorized local observation",
-        input="A local web response is missing CSP.",
+        input="A local web response is missing Content-Security-Policy.",
         expected_output="Identify the missing CSP as a security finding.",
         category="http_response_header",
     )
@@ -146,3 +146,34 @@ def test_evaluate_training_example():
     assert result.passed is True
     assert result.expected == example.expected_output
     assert result.actual == "Identify the missing CSP as a security finding."
+
+
+def test_evaluate_training_examples_batch():
+    from mythron.training import evaluate_training_examples
+
+    class FakeReasoner:
+        def reason(self, prompt):
+            if "Content-Security-Policy" in prompt:
+                return "Identify the missing CSP as a finding."
+            return "Identify the missing security header as a finding."
+
+    examples = [
+        TrainingExample(
+            task="Analyze CSP",
+            input="A local web response is missing Content-Security-Policy.",
+            expected_output="Identify the missing CSP as a finding.",
+            category="http_response_header",
+        ),
+        TrainingExample(
+            task="Analyze security header",
+            input="A local web response is missing X-Content-Type-Options.",
+            expected_output="Identify the missing security header as a finding.",
+            category="http_response_header",
+        ),
+    ]
+
+    result = evaluate_training_examples(FakeReasoner(), examples)
+
+    assert result.passed is True
+    assert result.summary == {"total": 2, "passed": 2, "failed": 0}
+    assert result.failed_cases == []
