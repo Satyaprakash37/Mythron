@@ -20,7 +20,12 @@ from mythron.browser import BrowserObservation
 from mythron.discovery import DiscoveryEngine
 from mythron.security_signals import SecuritySignalDetector
 from mythron.finding_analysis import FindingAnalysis, FindingAnalyzer
-from mythron.validation import ValidationRequest
+from mythron.validation import (
+    ValidationOutcome,
+    ValidationRequest,
+    ValidationResult,
+)
+from mythron.validation_executor import ValidationExecutor
 from mythron.evidence import EvidenceCollector
 from mythron.reporting import AssessmentReport, ReportGenerator
 
@@ -45,6 +50,7 @@ class AssessmentEngine:
         discovery: DiscoveryEngine | None = None,
         security_signal_detector: SecuritySignalDetector | None = None,
         finding_analyzer: FindingAnalyzer | None = None,
+        validation_executor: ValidationExecutor | None = None,
     ) -> None:
         self._assessment = assessment
         self._capabilities = capabilities
@@ -55,6 +61,7 @@ class AssessmentEngine:
         )
         self._security_signal_findings = FindingStore()
         self._finding_analyzer = finding_analyzer or FindingAnalyzer()
+        self._validation_executor = validation_executor or ValidationExecutor()
         self._evidence_collector = EvidenceCollector()
         self._report_generator = ReportGenerator(self._evidence_collector)
 
@@ -157,6 +164,34 @@ class AssessmentEngine:
 
         request.start()
         return request
+
+    def execute_validation(
+        self,
+        request: ValidationRequest,
+    ) -> ValidationResult:
+        """Execute an approved validation and record its result."""
+        if not self._assessment.scope.authorized:
+            raise PermissionError(
+                "Validation requires an authorized assessment."
+            )
+
+        if not self._assessment.scope.allows_target(request.finding.target):
+            raise PermissionError(
+                "Validation target does not match the authorized assessment target."
+            )
+
+        result = self._validation_executor.execute(request)
+
+        for evidence in result.evidence:
+            request.finding.add_evidence(evidence)
+
+        if result.outcome in {
+            ValidationOutcome.CONFIRMED,
+            ValidationOutcome.NOT_CONFIRMED,
+        }:
+            request.complete()
+
+        return result
 
     def complete_validation(
         self,

@@ -4,7 +4,7 @@ Validation requires explicit approval before execution can begin.
 This module does not perform exploitation or active security actions.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 from mythron.findings import Finding
@@ -17,6 +17,23 @@ class ValidationStatus(Enum):
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
     REJECTED = "REJECTED"
+
+
+class ValidationOutcome(Enum):
+    """Outcome of a controlled validation attempt."""
+
+    CONFIRMED = "CONFIRMED"
+    NOT_CONFIRMED = "NOT_CONFIRMED"
+    FAILED = "FAILED"
+
+
+@dataclass
+class ValidationResult:
+    """Structured result returned by a controlled validation attempt."""
+
+    outcome: ValidationOutcome
+    summary: str = ""
+    evidence: list[str] = field(default_factory=list)
 
 
 @dataclass

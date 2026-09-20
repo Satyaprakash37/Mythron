@@ -8,6 +8,7 @@ from mythron.assessment import Assessment, AssessmentScope
 from mythron.assessment_engine import AssessmentEngine
 from mythron.capabilities import Capability, CapabilityRegistry
 from mythron.executors import ExecutionResult
+from mythron.validation import ValidationOutcome, ValidationResult
 from mythron.approaches import AttemptStatus
 
 
@@ -22,6 +23,15 @@ class FakeExecutor:
             status=AttemptStatus.SUCCEEDED,
             result="fake execution succeeded",
             observations=["test observation"],
+        )
+
+
+class FakeValidationExecutor:
+    def execute(self, request):
+        return ValidationResult(
+            outcome=ValidationOutcome.CONFIRMED,
+            summary="Fake validation confirmed.",
+            evidence=["Controlled validation evidence"],
         )
 
 
@@ -275,6 +285,39 @@ def test_assessment_engine_can_start_approved_validation():
     started = engine.start_validation(request)
 
     assert started.status.value == "IN_PROGRESS"
+
+
+def test_assessment_engine_can_execute_validation():
+    from mythron.findings import Finding, Severity
+
+    assessment, base_engine = make_engine()
+
+    engine = AssessmentEngine(
+        assessment=assessment,
+        capabilities=base_engine._capabilities,
+        executors=base_engine._executors,
+        validation_executor=FakeValidationExecutor(),
+    )
+
+    finding = Finding(
+        title="Missing Content-Security-Policy Header",
+        description="CSP header was not observed.",
+        target="http://127.0.0.1:3000",
+        severity=Severity.LOW,
+        confidence=1.0,
+        evidence=["CSP header missing"],
+    )
+
+    request = engine.request_validation(finding)
+    request.approve()
+    engine.start_validation(request)
+
+    result = engine.execute_validation(request)
+
+    assert result.outcome == ValidationOutcome.CONFIRMED
+    assert "Controlled validation evidence" in finding.evidence
+    assert request.status.value == "COMPLETED"
+    assert finding.verified is True
 
 
 def test_assessment_engine_can_complete_validation():
