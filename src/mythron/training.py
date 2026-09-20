@@ -117,7 +117,11 @@ def run_training_example(reasoner, example: TrainingExample) -> str:
     return reasoner.reason(prompt)
 
 
-def evaluate_training_example(reasoner, example: TrainingExample):
+def evaluate_training_example(
+    reasoner,
+    example: TrainingExample,
+    case_name: str | None = None,
+):
     """Run one controlled example and compare its output with the expected output."""
 
     from mythron.evaluation import EvaluationCase
@@ -125,7 +129,7 @@ def evaluate_training_example(reasoner, example: TrainingExample):
     actual = run_training_example(reasoner, example)
 
     return EvaluationCase(
-        name=example.task,
+        name=case_name or example.task,
         objective=example.task,
         expected=example.expected_output,
         actual=actual,
@@ -140,8 +144,15 @@ def evaluate_training_examples(reasoner, examples):
 
     suite = EvaluationSuite()
 
-    for example in examples:
-        suite.add(evaluate_training_example(reasoner, example))
+    for index, example in enumerate(examples, start=1):
+        case_name = f"{example.task} [{index}]"
+        suite.add(
+            evaluate_training_example(
+                reasoner,
+                example,
+                case_name=case_name,
+            )
+        )
 
     return suite.run()
 

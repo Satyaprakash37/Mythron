@@ -198,3 +198,33 @@ def test_training_evaluation_report():
     assert report["passed"] is True
     assert report["summary"] == {"total": 1, "passed": 1, "failed": 0}
     assert report["failed_cases"] == []
+
+
+def test_evaluate_training_examples_allows_duplicate_task_names():
+    from mythron.training import evaluate_training_examples
+
+    class FakeReasoner:
+        def reason(self, prompt):
+            if "Content-Security-Policy" in prompt:
+                return "CSP finding identified."
+            return "X-Content-Type-Options finding identified."
+
+    examples = [
+        TrainingExample(
+            task="Analyze an authorized local web assessment observation",
+            input="Missing Content-Security-Policy header.",
+            expected_output="CSP finding identified.",
+            category="http_response_header",
+        ),
+        TrainingExample(
+            task="Analyze an authorized local web assessment observation",
+            input="Missing X-Content-Type-Options header.",
+            expected_output="X-Content-Type-Options finding identified.",
+            category="http_response_header",
+        ),
+    ]
+
+    result = evaluate_training_examples(FakeReasoner(), examples)
+
+    assert result.passed is True
+    assert result.summary == {"total": 2, "passed": 2, "failed": 0}
