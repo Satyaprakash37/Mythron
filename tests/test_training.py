@@ -177,3 +177,24 @@ def test_evaluate_training_examples_batch():
     assert result.passed is True
     assert result.summary == {"total": 2, "passed": 2, "failed": 0}
     assert result.failed_cases == []
+
+
+def test_training_evaluation_report():
+    from mythron.training import training_evaluation_report
+
+    class FakeReasoner:
+        def reason(self, prompt):
+            return "Identify the missing security header as a finding."
+
+    example = TrainingExample(
+        task="Analyze security header",
+        input="A local web response is missing X-Content-Type-Options.",
+        expected_output="Identify the missing security header as a finding.",
+        category="http_response_header",
+    )
+
+    report = training_evaluation_report(FakeReasoner(), [example])
+
+    assert report["passed"] is True
+    assert report["summary"] == {"total": 1, "passed": 1, "failed": 0}
+    assert report["failed_cases"] == []

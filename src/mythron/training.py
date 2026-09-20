@@ -144,3 +144,16 @@ def evaluate_training_examples(reasoner, examples):
         suite.add(evaluate_training_example(reasoner, example))
 
     return suite.run()
+
+
+def training_evaluation_report(reasoner, examples):
+    """Return a serializable report for a batch training evaluation."""
+
+    result = evaluate_training_examples(reasoner, examples)
+
+    return {
+        "passed": result.passed,
+        "summary": result.summary,
+        "failed_cases": result.failed_cases,
+        "case_statuses": result.case_statuses,
+    }
