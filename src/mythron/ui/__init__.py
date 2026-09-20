@@ -272,6 +272,16 @@ class MainWindow(QMainWindow):
             f"Assessment status: {status}"
         )
 
+    def configure_target(self, target: str) -> None:
+        """Configure the assessment target through the controller."""
+
+        if self.assessment_controller is None:
+            self.show_assessment_status("No assessment controller attached.")
+            return
+
+        self.assessment_controller.configure_target(target)
+        self.show_target_status(self.assessment_controller.target)
+
     def execute_assessment(self):
         """Execute the controlled browser inspection through the controller."""
 

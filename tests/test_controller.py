@@ -94,3 +94,22 @@ def test_controller_rejects_target_mismatch():
 
     assert result.allowed is False
     assert "target does not match" in result.reason
+
+def test_controller_can_configure_target_before_assessment_starts():
+    _, controller = make_controller()
+
+    controller.configure_target("http://127.0.0.1:3000")
+
+    assert controller.target == "http://127.0.0.1:3000"
+
+def test_controller_rejects_target_change_after_assessment_starts():
+    _, controller = make_controller()
+
+    controller.start()
+
+    try:
+        controller.configure_target("http://127.0.0.1:4000")
+    except RuntimeError as exc:
+        assert "cannot be changed" in str(exc)
+    else:
+        raise AssertionError("Expected target change to be rejected")

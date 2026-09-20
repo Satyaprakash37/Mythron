@@ -663,3 +663,24 @@ def test_main_window_can_execute_attached_assessment():
     assert "SUCCEEDED" in window.assessment_status.text()
 
     window.close()
+
+def test_main_window_can_configure_assessment_target():
+    from mythron.ui import MainWindow
+
+    class FakeController:
+        target = "http://127.0.0.1:3000"
+        status = type("Status", (), {"value": "CREATED"})()
+
+        def configure_target(self, target):
+            self.target = target
+
+    window = MainWindow()
+    controller = FakeController()
+
+    window.attach_controller(controller)
+    window.configure_target("http://127.0.0.1:3000")
+
+    assert controller.target == "http://127.0.0.1:3000"
+    assert window.target_status.text() == "http://127.0.0.1:3000"
+
+    window.close()

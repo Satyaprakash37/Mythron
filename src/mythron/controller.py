@@ -41,6 +41,20 @@ class AssessmentController:
         """Start the assessment through its authorization boundary."""
         self.assessment.start()
 
+    def configure_target(self, target: str) -> None:
+        """Configure the assessment target before the assessment starts."""
+
+        if self.status is not AssessmentStatus.CREATED:
+            raise RuntimeError(
+                "Assessment target cannot be changed after assessment start."
+            )
+
+        normalized_target = target.strip()
+        if not normalized_target:
+            raise ValueError("Assessment target cannot be empty.")
+
+        self.assessment.scope.target = normalized_target
+
     def execute(
         self,
         capability_name: str,
