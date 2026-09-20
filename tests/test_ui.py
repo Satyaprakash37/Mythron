@@ -217,3 +217,374 @@ def test_main_window_uses_security_console_theme():
     assert "QPushButton" in stylesheet
 
     window.close()
+
+
+def test_main_window_has_dashboard_security_status():
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    assert hasattr(window, "target_status")
+    assert hasattr(window, "assessment_state")
+    assert hasattr(window, "findings_count")
+    assert hasattr(window, "evidence_count")
+
+    assert window.target_status.text() == "No target configured"
+    assert window.assessment_state.text() == "Ready"
+    assert window.findings_count.text() == "0"
+    assert window.evidence_count.text() == "0"
+
+    window.close()
+
+
+def test_findings_and_evidence_counts_update():
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    window.show_findings([
+        "Missing security header",
+        "Information disclosure",
+    ])
+    window.show_evidence([
+        "HTTP response captured",
+        "Header observation recorded",
+        "Request metadata recorded",
+    ])
+
+    assert window.findings_count.text() == "2"
+    assert window.evidence_count.text() == "3"
+
+    window.close()
+
+
+def test_main_window_can_update_target_status():
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    window.show_target_status("http://127.0.0.1:3000")
+
+    assert window.target_status.text() == "http://127.0.0.1:3000"
+
+    window.show_target_status("No target configured")
+
+    assert window.target_status.text() == "No target configured"
+
+    window.close()
+
+
+def test_findings_and_evidence_counts_reset_when_empty():
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    window.show_findings(["Finding"])
+    window.show_evidence(["Evidence"])
+
+    assert window.findings_count.text() == "1"
+    assert window.evidence_count.text() == "1"
+
+    window.show_findings([])
+    window.show_evidence([])
+
+    assert window.findings_count.text() == "0"
+    assert window.evidence_count.text() == "0"
+
+    window.close()
+
+
+def test_main_window_has_console_sidebar_and_content_area():
+    from PySide6.QtWidgets import QFrame
+
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    frames = window.findChildren(QFrame)
+
+    object_names = [
+        frame.objectName()
+        for frame in frames
+    ]
+
+    assert "console_sidebar" in object_names
+    assert "console_content" in object_names
+
+    window.close()
+
+
+def test_console_sidebar_has_fixed_width():
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    sidebar = window.findChild(
+        __import__("PySide6.QtWidgets", fromlist=["QFrame"]).QFrame,
+        "console_sidebar",
+    )
+
+    assert sidebar is not None
+    assert sidebar.minimumWidth() == 220
+    assert sidebar.maximumWidth() == 280
+
+    window.close()
+
+
+def test_navigation_buttons_are_inside_console_sidebar():
+    from PySide6.QtWidgets import QFrame, QPushButton
+
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    sidebar = window.findChild(QFrame, "console_sidebar")
+    assert sidebar is not None
+
+    navigation_buttons = [
+        button
+        for button in sidebar.findChildren(QPushButton)
+    ]
+
+    names = [
+        button.text()
+        for button in navigation_buttons
+    ]
+
+    assert "Dashboard" in names
+    assert "Assessment" in names
+    assert "Findings" in names
+    assert "Evidence" in names
+    assert "Reasoning" in names
+    assert "Training" in names
+    assert "Activity" in names
+
+    window.close()
+
+
+def test_dashboard_has_security_status_cards():
+    from PySide6.QtWidgets import QGroupBox
+
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    cards = [
+        box
+        for box in window.findChildren(QGroupBox)
+        if box.objectName().startswith("status_card_")
+    ]
+
+    card_names = [
+        card.objectName()
+        for card in cards
+    ]
+
+    assert "status_card_target" in card_names
+    assert "status_card_assessment" in card_names
+    assert "status_card_findings" in card_names
+    assert "status_card_evidence" in card_names
+
+    window.close()
+
+
+def test_dashboard_status_cards_have_console_object_names():
+    from PySide6.QtWidgets import QGroupBox
+
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    expected = {
+        "status_card_target",
+        "status_card_assessment",
+        "status_card_findings",
+        "status_card_evidence",
+    }
+
+    actual = {
+        card.objectName()
+        for card in window.findChildren(QGroupBox)
+        if card.objectName().startswith("status_card_")
+    }
+
+    assert actual == expected
+
+    window.close()
+
+
+def test_dashboard_status_cards_use_console_card_style():
+    from PySide6.QtWidgets import QGroupBox
+
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    cards = [
+        card
+        for card in window.findChildren(QGroupBox)
+        if card.objectName().startswith("status_card_")
+    ]
+
+    assert cards
+
+    for card in cards:
+        assert card.styleSheet() != ""
+
+    window.close()
+
+
+def test_main_window_has_console_header():
+    from PySide6.QtWidgets import QFrame
+
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    header = window.findChild(QFrame, "console_header")
+
+    assert header is not None
+
+    window.close()
+
+
+def test_console_header_has_security_style():
+    from PySide6.QtWidgets import QFrame
+
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    header = window.findChild(QFrame, "console_header")
+
+    assert header is not None
+    assert header.styleSheet() != ""
+
+    window.close()
+
+
+def test_main_window_has_activity_panel():
+    from PySide6.QtWidgets import QGroupBox
+
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    activity_panel = window.findChild(
+        QGroupBox,
+        "activity_panel",
+    )
+
+    assert activity_panel is not None
+    assert activity_panel.title() == "Activity"
+
+    window.close()
+
+
+def test_activity_log_records_event():
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    window.log_activity("Assessment initialized")
+
+    assert "Assessment initialized" in window.activity_log.toPlainText()
+
+    window.close()
+
+
+def test_navigation_records_activity():
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    window.navigate_to("Assessment")
+
+    assert "View changed → Assessment" in window.activity_log.toPlainText()
+
+    window.close()
+
+
+def test_assessment_status_records_activity():
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    window.show_assessment_status("Assessment started")
+
+    assert "Assessment status → Assessment started" in (
+        window.activity_log.toPlainText()
+    )
+
+    window.close()
+
+
+def test_assessment_state_records_activity():
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    window.set_assessment_state("Running")
+
+    assert "Assessment state → Running" in (
+        window.activity_log.toPlainText()
+    )
+
+    window.close()
+
+
+def test_target_status_records_activity():
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    window.show_target_status("http://127.0.0.1:3000")
+
+    assert "Target configured → http://127.0.0.1:3000" in (
+        window.activity_log.toPlainText()
+    )
+
+    window.close()
+
+
+def test_findings_records_activity():
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    window.show_findings(["Example finding"])
+
+    assert "Findings updated → 1 item(s)" in (
+        window.activity_log.toPlainText()
+    )
+
+    window.close()
+
+
+def test_evidence_records_activity():
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    window.show_evidence(["Example evidence"])
+
+    assert "Evidence updated → 1 item(s)" in (
+        window.activity_log.toPlainText()
+    )
+
+    window.close()
+
+
+def test_activity_log_preserves_event_order():
+    from mythron.ui import MainWindow
+
+    window = MainWindow()
+
+    window.log_activity("First event")
+    window.log_activity("Second event")
+
+    log = window.activity_log.toPlainText()
+
+    assert log.index("First event") < log.index("Second event")
+
+    window.close()
