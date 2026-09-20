@@ -1,0 +1,3 @@
+{"name":"browser_execution","objective":"Authorized local browser inspection succeeds","expected":"SUCCEEDED","actual":"SUCCEEDED","notes":"Controlled local Juice Shop assessment."}
+{"name":"csp_finding","objective":"Missing CSP signal is detected","expected":"Missing Content-Security-Policy Header","actual":"Missing Content-Security-Policy Header","notes":"Observed during authorized local assessment."}
+{"name":"report_findings","objective":"Assessment report contains expected finding count","expected":"2","actual":"2","notes":"Report contained the expected two findings."}

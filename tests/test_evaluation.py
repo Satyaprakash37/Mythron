@@ -271,3 +271,107 @@ def test_evaluation_result_keeps_case_statuses_independent():
 
     assert "Injected" not in suite.all()[0].name
     assert result.case_statuses["Discovery"] is True
+
+
+def test_load_jsonl_reads_valid_cases(tmp_path):
+    from mythron.evaluation import load_jsonl
+
+    dataset = tmp_path / "cases.jsonl"
+    dataset.write_text(
+        '{"name":"Case A","objective":"Check A","expected":"ok","actual":"ok","notes":"note A"}\n'
+        '{"name":"Case B","objective":"Check B","expected":"yes","actual":"yes"}\n',
+        encoding="utf-8",
+    )
+
+    suite = load_jsonl(str(dataset))
+
+    assert len(suite.all()) == 2
+    assert suite.all()[0].name == "Case A"
+    assert suite.all()[0].notes == "note A"
+    assert suite.all()[1].notes == ""
+
+
+def test_load_jsonl_rejects_invalid_json(tmp_path):
+    from mythron.evaluation import load_jsonl
+
+    dataset = tmp_path / "invalid.jsonl"
+    dataset.write_text(
+        '{"name":"Case A","objective":"Check","expected":"ok","actual":"ok"}\n'
+        '{"name":"broken"\n',
+        encoding="utf-8",
+    )
+
+    try:
+        load_jsonl(str(dataset))
+    except ValueError as exc:
+        assert "line 2" in str(exc)
+    else:
+        raise AssertionError("Invalid JSON should be rejected.")
+
+
+def test_load_jsonl_rejects_missing_required_field(tmp_path):
+    from mythron.evaluation import load_jsonl
+
+    dataset = tmp_path / "missing.jsonl"
+    dataset.write_text(
+        '{"name":"Case A","objective":"Check","actual":"ok"}\n',
+        encoding="utf-8",
+    )
+
+    try:
+        load_jsonl(str(dataset))
+    except ValueError as exc:
+        assert "expected" in str(exc)
+        assert "line 1" in str(exc)
+    else:
+        raise AssertionError("Missing required field should be rejected.")
+
+
+def test_load_jsonl_rejects_duplicate_names(tmp_path):
+    from mythron.evaluation import load_jsonl
+
+    dataset = tmp_path / "duplicate.jsonl"
+    dataset.write_text(
+        '{"name":"Same","objective":"First","expected":"ok","actual":"ok"}\n'
+        '{"name":"Same","objective":"Second","expected":"ok","actual":"ok"}\n',
+        encoding="utf-8",
+    )
+
+    try:
+        load_jsonl(str(dataset))
+    except ValueError as exc:
+        assert "line 2" in str(exc)
+        assert "already exists" in str(exc)
+    else:
+        raise AssertionError("Duplicate names should be rejected.")
+
+
+def test_load_jsonl_skips_empty_lines(tmp_path):
+    from mythron.evaluation import load_jsonl
+
+    dataset = tmp_path / "empty_lines.jsonl"
+    dataset.write_text(
+        '\n{"name":"Case A","objective":"Check","expected":"ok","actual":"ok"}\n\n',
+        encoding="utf-8",
+    )
+
+    suite = load_jsonl(str(dataset))
+
+    assert len(suite.all()) == 1
+
+
+def test_load_jsonl_requires_json_objects(tmp_path):
+    from mythron.evaluation import load_jsonl
+
+    dataset = tmp_path / "not_object.jsonl"
+    dataset.write_text(
+        '["not", "an", "object"]\n',
+        encoding="utf-8",
+    )
+
+    try:
+        load_jsonl(str(dataset))
+    except ValueError as exc:
+        assert "must be a JSON object" in str(exc)
+    else:
+        raise AssertionError("Non-object JSON should be rejected.")

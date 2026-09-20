@@ -5,6 +5,8 @@ assessment and agent behavior testing.
 """
 
 from dataclasses import dataclass
+from pathlib import Path
+import json
 
 
 @dataclass
@@ -61,6 +63,58 @@ class EvaluationSuite:
             "passed": passed,
             "failed": total - passed,
         }
+
+
+def load_jsonl(path: str) -> EvaluationSuite:
+    """Load evaluation cases from a UTF-8 JSONL file."""
+    suite = EvaluationSuite()
+
+    try:
+        lines = Path(path).read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise ValueError(f"Could not read evaluation dataset: {exc}") from exc
+
+    required = {"name", "objective", "expected", "actual"}
+
+    for line_number, line in enumerate(lines, start=1):
+        if not line.strip():
+            continue
+
+        try:
+            data = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                f"Invalid JSON on line {line_number}: {exc.msg}"
+            ) from exc
+
+        if not isinstance(data, dict):
+            raise ValueError(
+                f"Evaluation case on line {line_number} must be a JSON object."
+            )
+
+        missing = required - data.keys()
+        if missing:
+            fields = ", ".join(sorted(missing))
+            raise ValueError(
+                f"Missing required field(s) on line {line_number}: {fields}"
+            )
+
+        try:
+            suite.add(
+                EvaluationCase(
+                    name=data["name"],
+                    objective=data["objective"],
+                    expected=data["expected"],
+                    actual=data["actual"],
+                    notes=data.get("notes", ""),
+                )
+            )
+        except ValueError as exc:
+            raise ValueError(
+                f"Invalid evaluation case on line {line_number}: {exc}"
+            ) from exc
+
+    return suite
 
 
 @dataclass
