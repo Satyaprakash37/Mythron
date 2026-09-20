@@ -80,3 +80,48 @@ def test_load_training_jsonl_rejects_missing_field(tmp_path: Path):
 
     with pytest.raises(ValueError, match="expected_output"):
         load_training_jsonl(str(dataset))
+
+
+def test_build_training_prompt():
+    from mythron.training import build_training_prompt
+
+    example = TrainingExample(
+        task="Analyze an authorized local observation",
+        input="A local web response is missing CSP.",
+        expected_output="Record the missing CSP as a finding.",
+        category="http_response_header",
+    )
+
+    prompt = build_training_prompt(example)
+
+    assert "Analyze an authorized local observation" in prompt
+    assert "A local web response is missing CSP." in prompt
+    assert "Record the missing CSP as a finding." in prompt
+    assert "http_response_header" in prompt
+    assert "authorized_local_only" in prompt
+
+
+def test_run_training_example_with_reasoner():
+    from mythron.training import run_training_example
+
+    class FakeReasoner:
+        def __init__(self):
+            self.prompts = []
+
+        def reason(self, prompt):
+            self.prompts.append(prompt)
+            return "Training example processed."
+
+    example = TrainingExample(
+        task="Analyze an authorized local observation",
+        input="A local web response is missing CSP.",
+        expected_output="Record the missing CSP as a finding.",
+        category="http_response_header",
+    )
+
+    reasoner = FakeReasoner()
+    result = run_training_example(reasoner, example)
+
+    assert result == "Training example processed."
+    assert len(reasoner.prompts) == 1
+    assert "missing CSP" in reasoner.prompts[0]

@@ -92,3 +92,26 @@ def load_training_jsonl(path: str) -> list[TrainingExample]:
             ) from exc
 
     return examples
+
+
+def build_training_prompt(example: TrainingExample) -> str:
+    """Build a structured prompt from one controlled training example."""
+
+    validate_training_example(example)
+
+    return (
+        "MYTHRON CONTROLLED TRAINING EXAMPLE\n"
+        f"Safety scope: {example.safety}\n"
+        f"Category: {example.category}\n\n"
+        f"Task:\n{example.task}\n\n"
+        f"Input:\n{example.input}\n\n"
+        f"Expected output:\n{example.expected_output}\n"
+    )
+
+
+def run_training_example(reasoner, example: TrainingExample) -> str:
+    """Run one controlled training example through a reasoning-compatible object."""
+
+    validate_training_example(example)
+    prompt = build_training_prompt(example)
+    return reasoner.reason(prompt)
