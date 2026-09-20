@@ -125,3 +125,24 @@ def test_run_training_example_with_reasoner():
     assert result == "Training example processed."
     assert len(reasoner.prompts) == 1
     assert "missing CSP" in reasoner.prompts[0]
+
+
+def test_evaluate_training_example():
+    from mythron.training import evaluate_training_example
+
+    class FakeReasoner:
+        def reason(self, prompt):
+            return "Identify the missing CSP as a security finding."
+
+    example = TrainingExample(
+        task="Analyze an authorized local observation",
+        input="A local web response is missing CSP.",
+        expected_output="Identify the missing CSP as a security finding.",
+        category="http_response_header",
+    )
+
+    result = evaluate_training_example(FakeReasoner(), example)
+
+    assert result.passed is True
+    assert result.expected == example.expected_output
+    assert result.actual == "Identify the missing CSP as a security finding."

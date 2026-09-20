@@ -115,3 +115,19 @@ def run_training_example(reasoner, example: TrainingExample) -> str:
     validate_training_example(example)
     prompt = build_training_prompt(example)
     return reasoner.reason(prompt)
+
+
+def evaluate_training_example(reasoner, example: TrainingExample):
+    """Run one controlled example and compare its output with the expected output."""
+
+    from mythron.evaluation import EvaluationCase
+
+    actual = run_training_example(reasoner, example)
+
+    return EvaluationCase(
+        name=example.task,
+        objective=example.task,
+        expected=example.expected_output,
+        actual=actual,
+        notes=f"Category: {example.category}; Safety: {example.safety}",
+    )
